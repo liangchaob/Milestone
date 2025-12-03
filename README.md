@@ -1,17 +1,28 @@
 # Milestone 使用说明
 
 ## 概述
-- 本工具是一个可直接双击 `index.html` 运行的本地单页应用，用于一人公司的项目里程碑与任务管理。
+- 本工具是一个可直接双击运行的本地单页应用，用于一人公司/小团队的项目里程碑与任务管理。
 - 左侧：总进度圆环 + 里程碑列表（支持增删改）。
 - 右侧：当前里程碑的任务清单（支持增删改与勾选完成）与进度轴；无任务时隐藏进度与空态框。
 - 数据持久化：优先 IndexedDB，自动回退到 localStorage；支持导入/导出 JSON。
 
+## 目标用户与解决的问题
+- 目标用户：独立开发者、一人公司、项目经理、小型研发/测试团队、产品/运营同学。
+- 解决的问题：
+  - 极致轻量、离线、零后端的里程碑与任务可视化，不依赖复杂项目管理平台。
+  - 支持快速导入/导出，便于跨设备迁移与汇报协作。
+  - 一键以大屏/会议模式展示当前阶段进度与关键任务，适合周会、复盘与走查。
+  - 本地数据存储，隐私可控，适合个人与小团队内部使用。
+
 ## 快速开始
-- 直接双击 `index.html` 打开。
+- 需要本地预先安装 Chrome 浏览器。
+- 一键启动（推荐）：在项目根目录双击 `milestone.bat`，会以 Chrome App 模式全屏打开 `index.html`。
+  - 脚本使用相对路径，项目文件夹可放在任意位置，无需固定磁盘路径。
+- 直接打开：也可双击 `index.html` 在浏览器中运行（非 App 模式）。
+- 生成快捷方式并设置图标：
+  - 在项目根目录放置 `milestone.ico`（可将 PNG 转 ICO）。
+  - 双击运行 `create_shortcut.bat`，会同时在“桌面”和“当前项目根目录”生成 `Milestone.lnk`；图标自动读取根目录的 `milestone.ico`，若不存在则使用系统默认图标。
 - 全屏运行：点击左上角“全屏”按钮或使用桌面快捷方式。
-- 生成桌面快捷方式并设置图标：
-  - 在 `d:\denv\quickview` 放置 `milestone.ico`（将 PNG 转为 ICO）。
-  - 双击运行 `create_shortcut.bat`，会在桌面生成 `Milestone.lnk`，图标来自 `milestone.ico`。
 
 ## 功能
 - 里程碑：新建/编辑/删除；列表支持拖拽排序；状态显示进度百分比与 TODO 总数。
@@ -118,8 +129,18 @@
 - 描述是可选吗？是；留空也可正常使用。
 
 ## 版本与路径参考
-- 主要文件：`index.html`（单文件）、`milestone.bat`（App 模式启动脚本）、`create_shortcut.bat/ps1`（快捷方式生成）、`milestone.ico`（图标）。
+- 主要文件：`index.html`（单文件）、`milestone.bat`（App 模式启动脚本，相对路径）、`milestone.ico`（图标）。
 - 代码位置提示在说明中已对应增删改查逻辑与样式关键点。
+
+## 启动脚本说明（milestone.bat）
+- 脚本会自动检测 Chrome：
+  - 优先使用 `%ProgramFiles%\Google\Chrome\Application\chrome.exe` 或 `%ProgramFiles(x86)%\Google\Chrome\Application\chrome.exe`。
+  - 若未找到，回退为 `start chrome`（依赖 Chrome 在系统 PATH）。
+- 使用相对路径构造 `file:///.../index.html`，不绑定绝对磁盘位置。
+- 若系统未安装 Chrome，可用其他浏览器直接打开 `index.html`（体验略有差异，App 模式为 Chrome 专属）。
+
+## 快捷方式脚本
+- `create_shortcut.bat`：纯 BAT 脚本，内部调用 WSH 创建 `Milestone.lnk`，目标为 `milestone.bat`，工作目录为项目根；会同时在桌面和当前目录生成快捷方式，并优先使用根目录的 `milestone.ico`。
 
 ---
 如需进一步约束生成（比如任务模板、估时字段等），可在 Prompt 中添加额外字段，但当前版本的“导入”仅识别本文档定义的字段。你可以在导入后通过应用内编辑补全其他上下文信息。

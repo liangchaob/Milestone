@@ -3,7 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Milestone — 在这里管理你的里程碑</title>
+    <title>Milestone — 你的项目领航员</title>
+    <link rel="icon" href="milestone.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="milestone.ico" type="image/x-icon">
     <style>
         :root {
             --primary-color: #00eaff;
@@ -102,6 +104,11 @@
         .menu.open { display:block; }
         .menu-item { padding:8px 10px; font-size: var(--font-size); color:var(--text-main); background:transparent; border:none; width:100%; text-align:left; cursor:pointer; }
         .menu-item:hover { background:#0c121a; }
+        .m-title.completed { color: var(--text-sub); }
+        .m-complete-icon { display:inline-flex; width:14px; height:14px; align-items:center; justify-content:center; color: var(--text-sub); }
+        .m-complete-icon svg { width:14px; height:14px; stroke: currentColor; fill: none; stroke-width: 2; }
+        .m-progress { height: 2px; width: 100%; background-color: #1e2638; border-radius: 999px; margin-top: 6px; }
+        .m-progress-fill { height: 100%; background-color: var(--primary-color); width: 0%; border-radius: 999px; transition: width 0.4s ease; box-shadow: 0 0 8px var(--glow); }
 
         /* --- 右侧详情区域 --- */
         .main-content {
@@ -114,6 +121,7 @@
 
         .header-section { margin-bottom: 16px; }
         .milestone-header { font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 6px; }
+        .milestone-header.completed { color: var(--text-sub); display: inline-flex; align-items: center; gap: 6px; }
         .milestone-desc { color: var(--text-sub); margin-bottom: 12px; font-size: var(--font-size); }
         .edit-row { display:flex; gap:8px; margin-top:8px; }
         .input { padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:#0b1016; color:var(--text-main); font-size: var(--font-size); }
@@ -187,13 +195,13 @@
             <button class="ctl-btn" id="addMilestoneBtn" title="新建里程碑">
                 <svg class="ctl-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
             </button>
-            <button class="ctl-btn" id="exportBtn" title="导出">
-                <svg class="ctl-icon" viewBox="0 0 24 24"><path d="M12 5v8"/><path d="M8 9l4 4 4-4"/><path d="M4 19h16"/></svg>
-            </button>
             <label class="ctl-btn" for="importInput" title="导入" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
-                <svg class="ctl-icon" viewBox="0 0 24 24"><path d="M12 19v-8"/><path d="M8 15l4-4 4 4"/><path d="M4 5h16"/></svg>
+                <svg class="ctl-icon" viewBox="0 0 24 24"><path d="M12 5v8"/><path d="M8 9l4 4 4-4"/><path d="M4 19h16"/></svg>
                 <input id="importInput" type="file" accept="application/json" style="display:none">
             </label>
+            <button class="ctl-btn" id="exportBtn" title="导出">
+                <svg class="ctl-icon" viewBox="0 0 24 24"><path d="M12 19v-8"/><path d="M8 15l4-4 4 4"/><path d="M4 5h16"/></svg>
+            </button>
             <button class="ctl-btn" id="fullscreenBtn" title="全屏">
                 <svg class="ctl-icon" id="fsIcon" viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M20 15v5h-5"/><path d="M4 15v5h5"/><path d="M20 9V4h-5"/></svg>
             </button>
@@ -483,7 +491,14 @@
             state.tasksByMilestone = new Map();
             for (const m of state.milestones) {
                 const tasks = await storage.tasks.queryByMilestone(m.id);
-                tasks.sort((a,b) => (a.order??a.createdAt) - (b.order??b.createdAt));
+                tasks.sort((a,b) => {
+                    const ao = (typeof a.order === 'number') ? a.order : Number.MAX_SAFE_INTEGER;
+                    const bo = (typeof b.order === 'number') ? b.order : Number.MAX_SAFE_INTEGER;
+                    if (ao !== bo) return ao - bo;
+                    const ac = (typeof a.createdAt === 'number') ? a.createdAt : 0;
+                    const bc = (typeof b.createdAt === 'number') ? b.createdAt : 0;
+                    return ac - bc;
+                });
                 state.tasksByMilestone.set(m.id, tasks);
             }
             if (!state.currentMilestoneId && state.milestones.length) state.currentMilestoneId = state.milestones[0].id;
@@ -518,9 +533,13 @@
                 const li = document.createElement('li');
                 li.className = `milestone-item ${m.id === state.currentMilestoneId ? 'active' : ''}`;
                 const percent = computeMilestonePercent(m.id);
-                const tasksCount = (state.tasksByMilestone.get(m.id) || []).length;
+                const tasksList = state.tasksByMilestone.get(m.id) || [];
+                const remaining = tasksList.filter(x => !x.done).length;
                 const dateText = m.dueDate ? ` · 日期: ${m.dueDate}` : (m.completedAt ? ` · 完成: ${m.completedAt}` : '');
-                li.innerHTML = `<div class="m-row"><span class="m-title">${m.title}</span><button class="menu-btn" data-action="menu" data-id="${m.id}">⋯</button></div><span class="m-status">进度: ${percent}% · TODO: ${tasksCount}${dateText}</span><div class="menu" id="menu-${m.id}"><button class="menu-item" data-action="edit" data-id="${m.id}">编辑</button><button class="menu-item" data-action="delete" data-id="${m.id}">删除</button></div>`;
+                const doneIcon = percent === 100 ? `<span class="m-complete-icon"><svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 7"/></svg></span>` : '';
+                const titleCls = percent === 100 ? 'm-title completed' : 'm-title';
+                const todoText = percent === 100 ? '' : ` · TODO: ${remaining}`;
+                li.innerHTML = `<div class="m-row">${doneIcon}<span class="${titleCls}">${m.title}</span><button class="menu-btn" data-action="menu" data-id="${m.id}">⋯</button></div><div class="m-progress"><div class="m-progress-fill" style="width:${percent}%"></div></div><span class="m-status">进度: ${percent}%${todoText}${dateText}</span><div class="menu" id="menu-${m.id}"><button class="menu-item" data-action="edit" data-id="${m.id}">编辑</button><button class="menu-item" data-action="delete" data-id="${m.id}">删除</button></div>`;
                 li.dataset.id = m.id;
                 li.setAttribute('draggable','true');
                 li.addEventListener('click', (e) => { const t = e.target; if (t instanceof HTMLElement && t.dataset.action) return; state.currentMilestoneId = m.id; render(); });
@@ -531,7 +550,10 @@
         function renderDetail() {
             const m = state.milestones.find(x => x.id === state.currentMilestoneId);
             if (!m) { currentTitleEl.innerText = ''; currentDescEl.innerText=''; taskListEl.innerHTML=''; progressBarEl.style.width='0%'; progressTextEl.innerText='0'; return; }
-            currentTitleEl.innerText = m.title;
+            const percentForTitle = computeMilestonePercent(m.id);
+            const doneIconForTitle = percentForTitle === 100 ? '<span class="m-complete-icon"><svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 7"/></svg></span>' : '';
+            currentTitleEl.className = percentForTitle === 100 ? 'milestone-header completed' : 'milestone-header';
+            currentTitleEl.innerHTML = `${doneIconForTitle}${m.title}`;
             currentDescEl.innerText = m.desc;
             const dateText = m.dueDate ? `日期: ${m.dueDate}` : (m.completedAt ? `完成: ${m.completedAt}` : '');
             const currentDateEl = document.getElementById('currentDate');
@@ -557,7 +579,7 @@
                 div.setAttribute('draggable','true');
                 taskListEl.appendChild(div);
             }
-            const percent = computeMilestonePercent(m.id);
+            const percent = percentForTitle;
             progressBarEl.style.width = `${percent}%`;
             progressTextEl.innerText = String(percent);
         }
@@ -826,6 +848,7 @@
             modalEl.classList.add('open');
             modalSubmitEl.textContent = '确认';
             modalCancelEl.textContent = '取消';
+            modalSubmitEl.disabled = false;
             const confirm = async () => { modalEl.classList.remove('open'); if (typeof cfg.onConfirm === 'function') await cfg.onConfirm(); };
             const cancel = () => { modalEl.classList.remove('open'); };
             modalSubmitEl.onclick = (e) => { e.preventDefault(); confirm(); };
@@ -842,9 +865,9 @@
 
         fullscreenBtn.addEventListener('click', async () => {
             if (!document.fullscreenElement) {
-                try { await document.documentElement.requestFullscreen(); } catch {}
+                try { await document.documentElement.requestFullscreen(); setFullscreenButton(); } catch {}
             } else {
-                try { await document.exitFullscreen(); } catch {}
+                try { await document.exitFullscreen(); setFullscreenButton(); } catch {}
             }
         });
 
@@ -855,8 +878,8 @@
                 if (isFs) {
                     fsIconEl.innerHTML = '';
                     fsIconEl.setAttribute('viewBox','0 0 24 24');
-                    // compress icon
-                    fsIconEl.insertAdjacentHTML('beforeend', '<path d="M9 4H4v5"/><path d="M15 20h5v-5"/><path d="M9 20H4v-5"/><path d="M15 4h5v5"/>' );
+                    // exit fullscreen icon (inward diagonals)
+                    fsIconEl.insertAdjacentHTML('beforeend', '<path d="M4 10l6-6"/><path d="M20 10l-6-6"/><path d="M4 14l6 6"/><path d="M20 14l-6 6"/>' );
                 } else {
                     fsIconEl.innerHTML = '';
                     fsIconEl.setAttribute('viewBox','0 0 24 24');
