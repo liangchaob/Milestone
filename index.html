@@ -1,0 +1,872 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milestone — 在这里管理你的里程碑</title>
+    <style>
+        :root {
+            --primary-color: #00eaff;
+            --bg-color: #0b0e14;
+            --card-bg: #0f131a;
+            --text-main: #e6edf3;
+            --text-sub: #8892b0;
+            --sidebar-width: 320px;
+            --border: #1a1f2b;
+            --glow: rgba(0,234,255,0.25);
+            --accent-2: #ff5a3c;
+            --circle-size: 92px;
+            --font-size: 12px;
+            --font-size-sm: 11px;
+            --font-size-lg: 16px;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: JetBrains Mono, Consolas, Monaco, monospace; }
+        
+        body {
+            display: flex;
+            height: 100vh;
+            background-color: var(--bg-color);
+            background-image:
+                linear-gradient(to right, rgba(255,255,255,0.04) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(255,255,255,0.04) 1px, transparent 1px);
+            background-size: 24px 24px;
+            color: var(--text-main);
+            overflow: hidden;
+            font-size: var(--font-size);
+        }
+
+        /* --- 左侧总览区域 --- */
+        .sidebar {
+            width: var(--sidebar-width);
+            background-color: var(--card-bg);
+            border-right: 1px solid var(--border);
+            display: flex;
+            flex-direction: column;
+            padding: 20px;
+            box-shadow: 0 0 0 1px var(--border);
+            z-index: 10;
+        }
+
+        .app-title { font-size: 14px; font-weight: 700; color: var(--text-main); letter-spacing: 0.02em; }
+        .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; }
+        .brand { display:flex; align-items:center; gap:1px; }
+        .brand-icon { display:inline-flex; width:14px; height:14px; align-items:center; justify-content:center; color: var(--accent-2); }
+        .brand-icon svg { width:14px; height:14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+        .brand-name { color: var(--accent-2); }
+        .controls { display: flex; gap: 4px; margin-bottom: 0; }
+        .ctl-btn { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; background: transparent; border: 1px solid var(--border); color: var(--text-sub); border-radius: 6px; cursor: pointer; }
+        .ctl-btn:hover { color: var(--text-main); box-shadow: 0 0 12px var(--glow); border-color: var(--primary-color); }
+        .ctl-icon { width:12px; height:12px; stroke: currentColor; fill: none; stroke-width: 1.5; }
+        .drag-handle { width:18px; height:18px; border:1px solid var(--border); border-radius:4px; display:inline-flex; align-items:center; justify-content:center; cursor:grab; color:var(--text-sub); margin-right:6px; background:transparent; }
+        .drag-handle:active { cursor:grabbing; }
+        .drag-handle-icon { width:12px; height:12px; stroke: currentColor; fill:none; stroke-width:1.6; }
+
+        /* 圆形总进度 */
+        .circular-progress-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+        .circle-chart { width: var(--circle-size); height: var(--circle-size); }
+        .circle-bg { fill: none; stroke: #1e2638; stroke-width: 3.8; }
+        .circle { fill: none; stroke: var(--primary-color); stroke-width: 2.8; stroke-linecap: round; transition: stroke-dasharray 0.5s ease; }
+        .percentage-label { fill: var(--text-main); font-family: sans-serif; font-weight: bold; font-size: 0.5em; text-anchor: middle; }
+        .percentage-sub { fill: var(--text-sub); font-family: sans-serif; font-size: 0.35em; text-anchor: middle; }
+        .total-label { margin-top: 6px; font-size: var(--font-size-sm); color: var(--text-sub); }
+
+        /* 左侧里程碑列表 */
+        .milestone-list { list-style: none; overflow-y: auto; flex: 1; }
+        .milestone-item {
+            position: relative;
+            padding: 8px;
+            margin-bottom: 6px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border-left: 4px solid transparent;
+            border: 1px solid var(--border);
+        }
+        .milestone-item:hover { background-color: #0c121a; box-shadow: 0 0 10px var(--glow); }
+        .milestone-item.active {
+            background-color: #0c151d;
+            border-left-color: var(--primary-color);
+        }
+        .m-title { font-weight: 600; display: block; margin-bottom: 2px; font-size: var(--font-size); }
+        .m-status { font-size: var(--font-size-sm); color: var(--text-sub); }
+        .m-row { display:flex; align-items:center; gap:6px; }
+        .menu-btn { margin-left:auto; width:24px; height:24px; border:1px solid var(--border); background:transparent; color:var(--text-sub); border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .menu-btn:hover { color:var(--text-main); border-color:var(--primary-color); box-shadow:0 0 8px var(--glow); }
+        .menu { position:absolute; right:8px; top:28px; background:#0b1016; border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 20px rgba(0,0,0,0.3); display:none; min-width:120px; z-index:20; }
+        .menu.open { display:block; }
+        .menu-item { padding:8px 10px; font-size: var(--font-size); color:var(--text-main); background:transparent; border:none; width:100%; text-align:left; cursor:pointer; }
+        .menu-item:hover { background:#0c121a; }
+
+        /* --- 右侧详情区域 --- */
+        .main-content {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+
+        .header-section { margin-bottom: 16px; }
+        .milestone-header { font-size: var(--font-size-lg); font-weight: 700; margin-bottom: 6px; }
+        .milestone-desc { color: var(--text-sub); margin-bottom: 12px; font-size: var(--font-size); }
+        .edit-row { display:flex; gap:8px; margin-top:8px; }
+        .input { padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:#0b1016; color:var(--text-main); font-size: var(--font-size); }
+        .input:focus { outline:none; border-color:var(--primary-color); box-shadow:0 0 8px var(--glow); }
+        .actions-row { display:flex; justify-content:flex-start; margin-top:8px; }
+
+        /* 进度横轴 */
+        .progress-bar-container {
+            background-color: #1e2638;
+            border-radius: 999px;
+            height: 8px;
+            width: 100%;
+            overflow: hidden;
+            margin-bottom: 6px;
+        }
+        .progress-bar-fill {
+            height: 100%;
+            background-color: var(--primary-color);
+            width: 0%; /* JS控制 */
+            border-radius: 999px;
+            transition: width 0.4s ease; box-shadow: 0 0 12px var(--glow);
+        }
+        .progress-text { text-align: right; font-size: var(--font-size); color: var(--primary-color); font-weight: 700; }
+
+        /* 任务列表 */
+        .task-list { margin-top: 12px; background: var(--card-bg); border-radius: 8px; padding: 12px; box-shadow: 0 0 0 1px var(--border); }
+        .task-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 10px 0;
+            border-bottom: 1px solid var(--border);
+        }
+        .task-item:last-child { border-bottom: none; }
+        
+        /* 自定义复选框样式 */
+        .task-checkbox {
+            width: 18px; height: 18px; margin-right: 10px; cursor: pointer; accent-color: var(--primary-color);
+        }
+        .task-text { font-size: var(--font-size); transition: color 0.3s; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+        .task-item.completed .task-text { text-decoration: line-through; color: #d1d5db; }
+        .task-content { display:flex; flex-direction:column; gap:4px; flex:1; min-width:0; }
+        .task-desc { font-size: var(--font-size-sm); color: var(--text-sub); white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+        .task-actions { margin-left:auto; display:flex; gap:6px; position: relative; }
+        .task-actions .menu { right:0; top:24px; }
+        .task-actions { flex:0 0 auto; align-self:flex-start; }
+        
+        .btn { padding: 6px 10px; background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text-sub); font-size: var(--font-size); }
+        .btn:hover { color: var(--text-main); box-shadow: 0 0 12px var(--glow); border-color: var(--primary-color); }
+
+        .modal { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:50; }
+        .modal.open { display:flex; }
+        .dialog { background:#0f131a; border:1px solid var(--border); border-radius:10px; width:clamp(320px, 38vw, 480px); max-width:95vw; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,0.5); }
+        .dialog-title { font-weight:700; margin-bottom:10px; font-size: var(--font-size); }
+        .dialog-form { display:flex; flex-direction:column; gap:10px; }
+        .dialog-actions { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
+        .btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+        .label { font-size: var(--font-size-sm); color: var(--text-sub); }
+        .dialog-form .input { width:100%; }
+        .textarea { padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:#0b1016; color:var(--text-main); font-size: var(--font-size); resize: vertical; min-height:68px; width:100%; }
+        .drag-over { outline: 1px dashed var(--primary-color); background: rgba(0,255,149,0.05); }
+        .placeholder { height: 6px; margin: 4px 0; border: 1px dashed var(--primary-color); border-radius: 4px; background: rgba(0,255,149,0.08); }
+
+    </style>
+</head>
+<body>
+
+    <!-- 左侧边栏 -->
+    <div class="sidebar">
+        <div class="topbar"><div class="app-title brand"><span class="brand-icon"><svg viewBox="0 0 24 24"><path d="M6 20V4"/><path d="M6 4h9l-2.5 3L15 10H6"/></svg></span><span class="brand-name">Milestone</span></div>
+        <div class="controls">
+            <button class="ctl-btn" id="addMilestoneBtn" title="新建里程碑">
+                <svg class="ctl-icon" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+            <button class="ctl-btn" id="exportBtn" title="导出">
+                <svg class="ctl-icon" viewBox="0 0 24 24"><path d="M12 5v8"/><path d="M8 9l4 4 4-4"/><path d="M4 19h16"/></svg>
+            </button>
+            <label class="ctl-btn" for="importInput" title="导入" style="display:inline-flex;align-items:center;justify-content:center;cursor:pointer;">
+                <svg class="ctl-icon" viewBox="0 0 24 24"><path d="M12 19v-8"/><path d="M8 15l4-4 4 4"/><path d="M4 5h16"/></svg>
+                <input id="importInput" type="file" accept="application/json" style="display:none">
+            </label>
+            <button class="ctl-btn" id="fullscreenBtn" title="全屏">
+                <svg class="ctl-icon" id="fsIcon" viewBox="0 0 24 24"><path d="M4 9V4h5"/><path d="M20 15v5h-5"/><path d="M4 15v5h5"/><path d="M20 9V4h-5"/></svg>
+            </button>
+        </div></div>
+
+        <!-- 圆形总进度 -->
+        <div class="circular-progress-container">
+            <svg viewBox="0 0 36 36" class="circle-chart">
+                <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <path class="circle" stroke-dasharray="0, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                <text x="18" y="19.2" class="percentage-label">0%</text>
+                <text x="18" y="25.2" class="percentage-sub">总进度</text>
+            </svg>
+        </div>
+
+        <!-- 里程碑列表 -->
+        <ul class="milestone-list" id="milestoneList">
+            <!-- 由JS生成 -->
+        </ul>
+    </div>
+
+    <!-- 右侧内容 -->
+    <div class="main-content">
+        <div id="detailView">
+            <div class="header-section">
+                <h1 class="milestone-header" id="currentTitle">里程碑标题</h1>
+                <p class="milestone-desc" id="currentDesc">当前阶段的描述信息...</p>
+                
+                <!-- 进度横轴 -->
+                <div class="progress-bar-container">
+                    <div class="progress-bar-fill" id="progressBar"></div>
+                </div>
+                <div class="progress-text"><span id="progressText">0</span>% 完成</div>
+            </div>
+
+            <!-- 任务列表 -->
+            <div class="task-list" id="taskList"></div>
+            <div class="actions-row"><button class="btn" id="openAddTaskBtn">+ 新建任务</button></div>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="dialog">
+            <div class="dialog-title" id="modalTitle"></div>
+            <form class="dialog-form" id="modalForm"></form>
+            <div class="dialog-actions">
+                <button class="btn" id="modalCancel">取消</button>
+                <button class="btn" id="modalSubmit">保存</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const milestoneListEl = document.getElementById('milestoneList');
+        const taskListEl = document.getElementById('taskList');
+        const currentTitleEl = document.getElementById('currentTitle');
+        const currentDescEl = document.getElementById('currentDesc');
+        const progressBarEl = document.getElementById('progressBar');
+        const progressTextEl = document.getElementById('progressText');
+        const circlePath = document.querySelector('.circle');
+        const percentageLabel = document.querySelector('.percentage-label');
+        const addMilestoneBtn = document.getElementById('addMilestoneBtn');
+        const exportBtn = document.getElementById('exportBtn');
+        const importInput = document.getElementById('importInput');
+        const openAddTaskBtn = document.getElementById('openAddTaskBtn');
+        const fullscreenBtn = document.getElementById('fullscreenBtn');
+        const fsIconEl = document.getElementById('fsIcon');
+        const modalEl = document.getElementById('modal');
+        const modalTitleEl = document.getElementById('modalTitle');
+        const modalFormEl = document.getElementById('modalForm');
+        const modalCancelEl = document.getElementById('modalCancel');
+        const modalSubmitEl = document.getElementById('modalSubmit');
+
+        const defaultData = [
+            { id: 'm1', title: '第一阶段：需求分析', desc: '梳理核心功能点，确定技术栈', tasks: [
+                { text: '收集用户痛点', done: true },
+                { text: '绘制界面草图', done: true },
+                { text: '确定数据库结构', done: false }
+            ]},
+            { id: 'm2', title: '第二阶段：核心开发', desc: '完成主要功能的编码工作', tasks: [
+                { text: '搭建开发环境', done: false },
+                { text: '编写前端页面', done: false },
+                { text: '后端API接口开发', done: false },
+                { text: '数据库连接测试', done: false }
+            ]},
+            { id: 'm3', title: '第三阶段：测试与上线', desc: '修复Bug并部署到生产环境', tasks: [
+                { text: '单元测试', done: false },
+                { text: '用户验收测试', done: false },
+                { text: '编写说明文档', done: false }
+            ]}
+        ];
+
+        function uid() {
+            if (crypto && crypto.randomUUID) return crypto.randomUUID();
+            return 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+        }
+
+        function supportsIDB() {
+            return typeof indexedDB !== 'undefined';
+        }
+
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open('milestone-db', 1);
+                req.onupgradeneeded = () => {
+                    const db = req.result;
+                    if (!db.objectStoreNames.contains('milestones')) db.createObjectStore('milestones', { keyPath: 'id' });
+                    if (!db.objectStoreNames.contains('tasks')) {
+                        const store = db.createObjectStore('tasks', { keyPath: 'id' });
+                        store.createIndex('milestoneId', 'milestoneId');
+                    }
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+
+        function idbStorage() {
+            let db;
+            async function init() {
+                db = await openDB();
+            }
+            async function countMilestones() {
+                return new Promise((resolve) => {
+                    const tx = db.transaction('milestones', 'readonly');
+                    const store = tx.objectStore('milestones');
+                    const req = store.count();
+                    req.onsuccess = () => resolve(req.result || 0);
+                    req.onerror = () => resolve(0);
+                });
+            }
+            return {
+                init,
+                milestones: {
+                    async getAll() {
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('milestones', 'readonly');
+                            const store = tx.objectStore('milestones');
+                            const req = store.getAll();
+                            req.onsuccess = () => resolve(req.result || []);
+                            req.onerror = () => resolve([]);
+                        });
+                    },
+                    async create(m) {
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('milestones', 'readwrite');
+                            tx.objectStore('milestones').add(m).onsuccess = () => resolve(true);
+                        });
+                    },
+                    async update(m) {
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('milestones', 'readwrite');
+                            tx.objectStore('milestones').put(m).onsuccess = () => resolve(true);
+                        });
+                    },
+                    async delete(id) {
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('milestones', 'readwrite');
+                            tx.objectStore('milestones').delete(id).onsuccess = () => resolve(true);
+                        });
+                    },
+                    count: countMilestones
+                },
+                tasks: {
+                    async queryByMilestone(id) {
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('tasks', 'readonly');
+                            const store = tx.objectStore('tasks');
+                            const idx = store.index('milestoneId');
+                            const req = idx.getAll(id);
+                            req.onsuccess = () => resolve(req.result || []);
+                            req.onerror = () => resolve([]);
+                        });
+                    },
+                    async create(t) {
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('tasks', 'readwrite');
+                            tx.objectStore('tasks').add(t).onsuccess = () => resolve(true);
+                        });
+                    },
+                    async update(t) {
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('tasks', 'readwrite');
+                            tx.objectStore('tasks').put(t).onsuccess = () => resolve(true);
+                        });
+                    },
+                    async delete(id) {
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('tasks', 'readwrite');
+                            tx.objectStore('tasks').delete(id).onsuccess = () => resolve(true);
+                        });
+                    },
+                    async deleteByMilestone(id) {
+                        return new Promise((resolve) => {
+                            const tx = db.transaction('tasks', 'readwrite');
+                            const store = tx.objectStore('tasks');
+                            const idx = store.index('milestoneId');
+                            const req = idx.openCursor(id);
+                            let pending = 0;
+                            req.onsuccess = () => {
+                                const cursor = req.result;
+                                if (cursor) {
+                                    pending++;
+                                    store.delete(cursor.primaryKey).onsuccess = () => { pending--; };
+                                    cursor.continue();
+                                } else {
+                                    const check = () => { if (pending <= 0) resolve(true); else setTimeout(check, 10); };
+                                    check();
+                                }
+                            };
+                            req.onerror = () => resolve(true);
+                        });
+                    }
+                }
+            };
+        }
+
+        function localStorageStorage() {
+            const KEY = 'milestone.storage';
+            function readAll() {
+                const raw = localStorage.getItem(KEY);
+                if (!raw) return [];
+                try { return JSON.parse(raw) || []; } catch { return []; }
+            }
+            function writeAll(list) {
+                localStorage.setItem(KEY, JSON.stringify(list));
+            }
+            return {
+                init: async function(){},
+                milestones: {
+                    async getAll() { return readAll().map((m, idx) => ({ id: m.id, title: m.title, desc: m.desc, dueDate: m.dueDate || '', createdAt: m.createdAt || Date.now(), order: m.order ?? idx })); },
+                    async create(m) { const all = readAll(); const order = all.length; all.push({ ...m, order, tasks: [] }); writeAll(all); return true; },
+                    async update(m) { const all = readAll(); const i = all.findIndex(x => x.id === m.id); if (i>=0) { all[i] = { ...all[i], title: m.title, desc: m.desc, dueDate: m.dueDate || all[i].dueDate || '', order: m.order ?? all[i].order, createdAt: all[i].createdAt ?? Date.now() }; writeAll(all);} return true; },
+                    async delete(id) { let all = readAll(); all = all.filter(x => x.id !== id); writeAll(all); return true; },
+                    async count() { return readAll().length; }
+                },
+                tasks: {
+                    async queryByMilestone(id) { const m = readAll().find(x => x.id === id); return (m && m.tasks) ? m.tasks.map((t, idx) => ({ id: t.id || 't'+idx, milestoneId: id, text: t.text, desc: t.desc || '', done: !!t.done, createdAt: t.createdAt || Date.now(), order: t.order ?? idx })) : []; },
+                    async create(t) { const all = readAll(); const m = all.find(x => x.id === t.milestoneId); if (!m) return true; m.tasks = m.tasks || []; const order = m.tasks.length; m.tasks.push({ id: t.id, text: t.text, desc: t.desc || '', done: t.done, createdAt: t.createdAt, order }); writeAll(all); return true; },
+                    async update(t) { const all = readAll(); const m = all.find(x => x.id === t.milestoneId); if (!m) return true; const i = (m.tasks||[]).findIndex(x => x.id === t.id); if (i>=0) { m.tasks[i] = { id: t.id, text: t.text, desc: t.desc || '', done: t.done, createdAt: t.createdAt, order: t.order ?? m.tasks[i].order }; writeAll(all);} return true; },
+                    async delete(id) { const all = readAll(); for (const m of all) { if (Array.isArray(m.tasks)) m.tasks = m.tasks.filter(x => x.id !== id); } writeAll(all); return true; },
+                    async deleteByMilestone(id) { const all = readAll(); const m = all.find(x => x.id === id); if (m) m.tasks = []; writeAll(all); return true; }
+                }
+            };
+        }
+
+        async function migrateFromLegacy(storage) {
+            const legacyRaw = localStorage.getItem('myProjectData');
+            if (!legacyRaw) return;
+            let legacy;
+            try { legacy = JSON.parse(legacyRaw); } catch { legacy = null; }
+            if (!legacy || !Array.isArray(legacy)) return;
+            const count = await storage.milestones.count();
+            if (count > 0) return;
+            let mi = 0;
+            for (const m of legacy) {
+                const mid = uid();
+                await storage.milestones.create({ id: mid, title: m.title, desc: m.desc, createdAt: Date.now(), order: mi++ });
+                let ti = 0;
+                for (const t of m.tasks || []) {
+                    await storage.tasks.create({ id: uid(), milestoneId: mid, text: t.text, done: !!t.done, createdAt: Date.now(), order: ti++ });
+                }
+            }
+        }
+
+        async function seedIfEmpty(storage) {
+            const count = await storage.milestones.count();
+            if (count > 0) return;
+            let mi = 0;
+            for (const m of defaultData) {
+                const mid = uid();
+                await storage.milestones.create({ id: mid, title: m.title, desc: m.desc, createdAt: Date.now(), order: mi++ });
+                let ti = 0;
+                for (const t of m.tasks) {
+                    await storage.tasks.create({ id: uid(), milestoneId: mid, text: t.text, done: t.done, createdAt: Date.now(), order: ti++ });
+                }
+            }
+        }
+
+        const storage = supportsIDB() ? idbStorage() : localStorageStorage();
+
+        const state = { currentMilestoneId: null, milestones: [], tasksByMilestone: new Map() };
+
+        async function loadAll() {
+            state.milestones = await storage.milestones.getAll();
+            state.milestones.sort((a,b) => (a.order??a.createdAt) - (b.order??b.createdAt));
+            state.tasksByMilestone = new Map();
+            for (const m of state.milestones) {
+                const tasks = await storage.tasks.queryByMilestone(m.id);
+                tasks.sort((a,b) => (a.order??a.createdAt) - (b.order??b.createdAt));
+                state.tasksByMilestone.set(m.id, tasks);
+            }
+            if (!state.currentMilestoneId && state.milestones.length) state.currentMilestoneId = state.milestones[0].id;
+        }
+
+        function computeMilestonePercent(mid) {
+            const tasks = state.tasksByMilestone.get(mid) || [];
+            const total = tasks.length;
+            const done = tasks.filter(t => t.done).length;
+            return total === 0 ? 0 : Math.round((done/total)*100);
+        }
+
+        function computeTotalPercent() {
+            let total = 0, done = 0;
+            for (const [, tasks] of state.tasksByMilestone) {
+                total += tasks.length;
+                done += tasks.filter(t => t.done).length;
+            }
+            return total === 0 ? 0 : Math.round((done/total)*100);
+        }
+
+        let dragMilestoneId = null;
+        let dragTaskId = null;
+        let milestonePlaceholder = null;
+        let taskPlaceholder = null;
+
+        function renderSidebar() {
+            milestoneListEl.innerHTML = '';
+            milestonePlaceholder = document.createElement('div');
+            milestonePlaceholder.className = 'placeholder';
+            for (const m of state.milestones) {
+                const li = document.createElement('li');
+                li.className = `milestone-item ${m.id === state.currentMilestoneId ? 'active' : ''}`;
+                const percent = computeMilestonePercent(m.id);
+                const tasksCount = (state.tasksByMilestone.get(m.id) || []).length;
+                const dateText = m.dueDate ? ` · 日期: ${m.dueDate}` : (m.completedAt ? ` · 完成: ${m.completedAt}` : '');
+                li.innerHTML = `<div class="m-row"><span class="m-title">${m.title}</span><button class="menu-btn" data-action="menu" data-id="${m.id}">⋯</button></div><span class="m-status">进度: ${percent}% · TODO: ${tasksCount}${dateText}</span><div class="menu" id="menu-${m.id}"><button class="menu-item" data-action="edit" data-id="${m.id}">编辑</button><button class="menu-item" data-action="delete" data-id="${m.id}">删除</button></div>`;
+                li.dataset.id = m.id;
+                li.setAttribute('draggable','true');
+                li.addEventListener('click', (e) => { const t = e.target; if (t instanceof HTMLElement && t.dataset.action) return; state.currentMilestoneId = m.id; render(); });
+                milestoneListEl.appendChild(li);
+            }
+        }
+
+        function renderDetail() {
+            const m = state.milestones.find(x => x.id === state.currentMilestoneId);
+            if (!m) { currentTitleEl.innerText = ''; currentDescEl.innerText=''; taskListEl.innerHTML=''; progressBarEl.style.width='0%'; progressTextEl.innerText='0'; return; }
+            currentTitleEl.innerText = m.title;
+            currentDescEl.innerText = m.desc;
+            const dateText = m.dueDate ? `日期: ${m.dueDate}` : (m.completedAt ? `完成: ${m.completedAt}` : '');
+            const currentDateEl = document.getElementById('currentDate');
+            if (currentDateEl) currentDateEl.innerText = dateText;
+            const tasks = state.tasksByMilestone.get(m.id) || [];
+            taskListEl.innerHTML = '';
+            const progressContainer = progressBarEl.parentElement; const progressTextWrap = progressTextEl.parentElement;
+            if (tasks.length === 0) { 
+                progressContainer.style.display = 'none';
+                progressTextWrap.style.display = 'none';
+                taskListEl.style.display = 'none';
+            } else {
+                progressContainer.style.display = 'block';
+                progressTextWrap.style.display = 'block';
+                taskListEl.style.display = 'block';
+            }
+            for (const t of tasks) {
+                const div = document.createElement('div');
+                div.className = `task-item ${t.done ? 'completed' : ''}`;
+                const descHtml = t.desc ? `<div class=\"task-desc\">${t.desc}</div>` : '';
+                div.innerHTML = `<input type=\"checkbox\" class=\"task-checkbox\" data-id=\"${t.id}\" ${t.done ? 'checked' : ''}><div class=\"task-content\"><span class=\"task-text\">${t.text}</span>${descHtml}</div><div class=\"task-actions\"><button class=\"menu-btn\" data-action=\"task-menu\" data-id=\"${t.id}\">⋯</button><div class=\"menu\" id=\"task-menu-${t.id}\"><button class=\"menu-item\" data-action=\"task-edit\" data-id=\"${t.id}\">编辑</button><button class=\"menu-item\" data-action=\"task-delete\" data-id=\"${t.id}\">删除</button></div></div>`;
+                div.dataset.id = t.id;
+                div.setAttribute('draggable','true');
+                taskListEl.appendChild(div);
+            }
+            const percent = computeMilestonePercent(m.id);
+            progressBarEl.style.width = `${percent}%`;
+            progressTextEl.innerText = String(percent);
+        }
+
+        function updateTotalProgress() {
+            const totalPercent = computeTotalPercent();
+            circlePath.setAttribute('stroke-dasharray', `${totalPercent}, 100`);
+            percentageLabel.textContent = `${totalPercent}%`;
+        }
+
+        function render() {
+            renderSidebar();
+            renderDetail();
+            updateTotalProgress();
+        }
+
+        function closeAllMenus() { document.querySelectorAll('.menu').forEach(el => el.classList.remove('open')); }
+
+        document.addEventListener('click', (e) => {
+            const t = e.target;
+            if (!(t instanceof HTMLElement)) return;
+            if (t.closest('.menu') || t.closest('.menu-btn')) return;
+            closeAllMenus();
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeAllMenus();
+        });
+
+        milestoneListEl.addEventListener('click', async (e) => {
+            const t = e.target;
+            if (!(t instanceof HTMLElement)) return;
+            const action = t.dataset.action; const id = t.dataset.id;
+            if (!action) return;
+            if (action === 'menu') {
+                const menu = document.getElementById(`menu-${id}`);
+                document.querySelectorAll('.menu').forEach(el => { if (el !== menu) el.classList.remove('open'); });
+                menu && menu.classList.toggle('open');
+                return;
+            }
+            if (action === 'edit') {
+                closeAllMenus();
+                const m = state.milestones.find(x => x.id === id);
+                if (!m) return;
+                openForm({ title: '编辑里程碑', fields: [ { name:'title', label:'标题', type:'text', value:m.title }, { name:'desc', label:'描述', type:'textarea', value:m.desc } ], onSubmit: async (vals) => { await storage.milestones.update({ ...m, title: vals.title, desc: vals.desc }); await loadAll(); render(); } });
+            } else if (action === 'delete') {
+                closeAllMenus();
+                openConfirm({ title:'删除里程碑', message:'删除里程碑将同时删除其任务，确认继续？', onConfirm: async () => { await storage.tasks.deleteByMilestone(id); await storage.milestones.delete(id); if (state.currentMilestoneId === id) state.currentMilestoneId = (state.milestones.find(x => x.id !== id) || {}).id || null; await loadAll(); render(); } });
+            }
+        });
+
+        taskListEl.addEventListener('click', async (e) => {
+            const t = e.target;
+            if (!(t instanceof HTMLElement)) return;
+            const action = t.dataset.action; const id = t.dataset.id;
+            if (!action) return;
+            if (action === 'task-menu') {
+                const menu = document.getElementById(`task-menu-${id}`);
+                document.querySelectorAll('.menu').forEach(el => { if (el !== menu) el.classList.remove('open'); });
+                menu && menu.classList.toggle('open');
+                return;
+            }
+            const m = state.milestones.find(x => x.id === state.currentMilestoneId);
+            if (!m) return;
+            if (action === 'task-edit') {
+                closeAllMenus();
+                const task = (state.tasksByMilestone.get(m.id)||[]).find(x => x.id === id);
+                if (!task) return;
+                openForm({ title:'编辑任务', fields:[ { name:'text', label:'任务内容', type:'text', value: task.text }, { name:'desc', label:'其他(可选)', type:'textarea', value: task.desc || '' } ], onSubmit: async (vals) => { await storage.tasks.update({ ...task, text: vals.text, desc: (vals.desc||'').trim() }); await loadAll(); render(); } });
+            } else if (action === 'task-delete') {
+                closeAllMenus();
+                openConfirm({ title:'删除任务', message:'确认删除该任务？', onConfirm: async () => { await storage.tasks.delete(id); await loadAll(); render(); } });
+            }
+        });
+
+        taskListEl.addEventListener('change', async (e) => {
+            const t = e.target;
+            if (!(t instanceof HTMLElement)) return;
+            if (t.classList.contains('task-checkbox')) {
+                const id = t.getAttribute('data-id');
+                const m = state.milestones.find(x => x.id === state.currentMilestoneId);
+                if (!m) return;
+                const task = (state.tasksByMilestone.get(m.id)||[]).find(x => x.id === id);
+                if (!task) return;
+                await storage.tasks.update({ ...task, done: !!(t instanceof HTMLInputElement ? t.checked : false) });
+                await loadAll(); render();
+            }
+        });
+
+        const dndMilestone = { id: null, newIndex: 0, placeholder: null, height: 0 };
+        const dndTask = { id: null, newIndex: 0, placeholder: null, height: 0 };
+
+        milestoneListEl.addEventListener('dragstart', (e) => {
+            const li = e.target instanceof HTMLElement ? e.target.closest('.milestone-item') : null;
+            if (!li) return;
+            const t = e.target;
+            if (t instanceof HTMLElement && (t.closest('.menu-btn') || t.closest('.menu'))) { e.preventDefault(); return; }
+            dndMilestone.id = li.getAttribute('data-id');
+            dndMilestone.height = li.offsetHeight;
+            dndMilestone.placeholder = document.createElement('div');
+            dndMilestone.placeholder.className = 'placeholder';
+            dndMilestone.placeholder.style.height = dndMilestone.height + 'px';
+            li.parentElement.insertBefore(dndMilestone.placeholder, li.nextSibling);
+            if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+        });
+        milestoneListEl.addEventListener('dragover', (e) => {
+            if (!dndMilestone.placeholder) return;
+            e.preventDefault();
+            const items = [...milestoneListEl.querySelectorAll('.milestone-item')];
+            const y = e.clientY;
+            let idx = items.findIndex(el => y < el.getBoundingClientRect().top + el.offsetHeight / 2);
+            dndMilestone.newIndex = idx === -1 ? items.length : idx;
+            const ref = idx === -1 ? null : items[idx];
+            milestoneListEl.insertBefore(dndMilestone.placeholder, ref);
+        });
+        milestoneListEl.addEventListener('drop', async (e) => {
+            if (!dndMilestone.placeholder) return;
+            e.preventDefault();
+            const fromIdx = state.milestones.findIndex(x => x.id === dndMilestone.id);
+            let toIdx = dndMilestone.newIndex;
+            if (fromIdx >= 0) {
+                const moved = state.milestones.splice(fromIdx, 1)[0];
+                state.milestones.splice(toIdx > fromIdx ? toIdx - 1 : toIdx, 0, moved);
+                for (let i = 0; i < state.milestones.length; i++) {
+                    await storage.milestones.update({ ...state.milestones[i], order: i });
+                }
+            }
+            dndMilestone.placeholder.remove();
+            dndMilestone.id = null;
+            await loadAll(); render();
+        });
+        milestoneListEl.addEventListener('dragend', () => {
+            if (dndMilestone.placeholder) { dndMilestone.placeholder.remove(); dndMilestone.id = null; }
+        });
+
+        taskListEl.addEventListener('dragstart', (e) => {
+            const item = e.target instanceof HTMLElement ? e.target.closest('.task-item') : null;
+            if (!item) return;
+            const t = e.target;
+            if (t instanceof HTMLElement && (t.closest('.menu-btn') || t.closest('.menu') || t.classList.contains('task-checkbox'))) { e.preventDefault(); return; }
+            dndTask.id = item.getAttribute('data-id');
+            dndTask.height = item.offsetHeight;
+            dndTask.placeholder = document.createElement('div');
+            dndTask.placeholder.className = 'placeholder';
+            dndTask.placeholder.style.height = dndTask.height + 'px';
+            item.parentElement.insertBefore(dndTask.placeholder, item.nextSibling);
+            if (e.dataTransfer) e.dataTransfer.effectAllowed = 'move';
+        });
+        taskListEl.addEventListener('dragover', (e) => {
+            if (!dndTask.placeholder) return;
+            e.preventDefault();
+            const items = [...taskListEl.querySelectorAll('.task-item')];
+            const y = e.clientY;
+            let idx = items.findIndex(el => y < el.getBoundingClientRect().top + el.offsetHeight / 2);
+            dndTask.newIndex = idx === -1 ? items.length : idx;
+            const ref = idx === -1 ? null : items[idx];
+            taskListEl.insertBefore(dndTask.placeholder, ref);
+        });
+        taskListEl.addEventListener('drop', async (e) => {
+            if (!dndTask.placeholder) return;
+            e.preventDefault();
+            const m = state.milestones.find(x => x.id === state.currentMilestoneId);
+            if (!m) return;
+            const list = state.tasksByMilestone.get(m.id) || [];
+            const fromIdx = list.findIndex(x => x.id === dndTask.id);
+            let toIdx = dndTask.newIndex;
+            if (fromIdx >= 0) {
+                const moved = list.splice(fromIdx, 1)[0];
+                list.splice(toIdx > fromIdx ? toIdx - 1 : toIdx, 0, moved);
+                for (let i = 0; i < list.length; i++) {
+                    const it = list[i];
+                    await storage.tasks.update({ ...it, order: i });
+                }
+            }
+            dndTask.placeholder.remove();
+            dndTask.id = null;
+            await loadAll(); render();
+        });
+        taskListEl.addEventListener('dragend', () => {
+            if (dndTask.placeholder) { dndTask.placeholder.remove(); dndTask.id = null; }
+        });
+
+        addMilestoneBtn.addEventListener('click', async () => {
+            openForm({ title:'新建里程碑', fields:[ { name:'title', label:'标题', type:'text' }, { name:'desc', label:'描述', type:'textarea' }, { name:'dueDate', label:'选择日期(可选)', type:'date' } ], onSubmit: async (vals) => { const id = uid(); const order = state.milestones.length; await storage.milestones.create({ id, title: vals.title || '', desc: vals.desc || '', dueDate: vals.dueDate || '', createdAt: Date.now(), order }); state.currentMilestoneId = id; await loadAll(); render(); } });
+        });
+
+        openAddTaskBtn.addEventListener('click', async () => {
+            const m = state.milestones.find(x => x.id === state.currentMilestoneId); if (!m) return;
+            openForm({ title:'新建任务', fields:[ { name:'text', label:'任务内容', type:'text' }, { name:'desc', label:'其他(可选)', type:'textarea' } ], onSubmit: async (vals) => { const list = state.tasksByMilestone.get(m.id) || []; const t = { id: uid(), milestoneId: m.id, text: (vals.text||'').trim(), desc: (vals.desc||'').trim(), done: false, createdAt: Date.now(), order: list.length }; if (!t.text) return; await storage.tasks.create(t); await loadAll(); render(); } });
+        });
+
+        exportBtn.addEventListener('click', async () => {
+            const data = [];
+            for (const m of state.milestones) {
+                const tasks = state.tasksByMilestone.get(m.id) || [];
+                data.push({ id: m.id, title: m.title, desc: m.desc, dueDate: m.dueDate || '', tasks: tasks.map(t => ({ id: t.id, text: t.text, desc: t.desc || '', done: t.done })) });
+            }
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'milestone-export.json';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        });
+
+        importInput.addEventListener('change', async (e) => {
+            const file = importInput.files && importInput.files[0];
+            if (!file) return;
+            const text = await file.text();
+            let data; try { data = JSON.parse(text); } catch { data = null; }
+            if (!data || !Array.isArray(data)) return;
+            for (const m of await storage.milestones.getAll()) { await storage.tasks.deleteByMilestone(m.id); await storage.milestones.delete(m.id); }
+            for (const m of data) {
+                const mid = uid();
+                await storage.milestones.create({ id: mid, title: m.title || '', desc: m.desc || '', dueDate: m.dueDate || '', createdAt: Date.now() });
+                for (const t of (m.tasks||[])) {
+                    await storage.tasks.create({ id: uid(), milestoneId: mid, text: t.text || '', desc: t.desc || '', done: !!t.done, createdAt: Date.now() });
+                }
+            }
+            await loadAll(); render();
+            importInput.value = '';
+        });
+
+        function openForm(cfg) {
+            modalTitleEl.textContent = cfg.title || '';
+            modalFormEl.innerHTML = '';
+            modalSubmitEl.textContent = '保存';
+            modalCancelEl.textContent = '取消';
+            for (const f of (cfg.fields||[])) {
+                const wrap = document.createElement('div');
+                const label = document.createElement('div'); label.className = 'label'; label.textContent = f.label || '';
+                let input;
+                if (f.type === 'textarea') { input = document.createElement('textarea'); input.className = 'textarea'; }
+                else { input = document.createElement('input'); input.className = 'input'; input.type = f.type || 'text'; }
+                input.name = f.name; input.value = f.value || ''; input.placeholder = f.placeholder || '';
+                wrap.appendChild(label); wrap.appendChild(input); modalFormEl.appendChild(wrap);
+            }
+            modalEl.classList.add('open');
+            function checkValidity() {
+                let ok = true;
+                const titleEl = modalFormEl.querySelector('input[name="title"]');
+                const textEl = modalFormEl.querySelector('input[name="text"]');
+                if (titleEl && !titleEl.value.trim()) ok = false;
+                if (textEl && !textEl.value.trim()) ok = false;
+                modalSubmitEl.disabled = !ok;
+            }
+            modalFormEl.addEventListener('input', checkValidity);
+            checkValidity();
+            const submit = async () => {
+                if (modalSubmitEl.disabled) return;
+                const vals = {}; for (const el of modalFormEl.querySelectorAll('input')) { vals[el.name] = el.value; }
+                for (const el of modalFormEl.querySelectorAll('textarea')) { vals[el.name] = el.value; }
+                modalEl.classList.remove('open');
+                if (typeof cfg.onSubmit === 'function') await cfg.onSubmit(vals);
+            };
+            const cancel = () => { modalEl.classList.remove('open'); };
+            modalSubmitEl.onclick = (e) => { e.preventDefault(); submit(); };
+            modalCancelEl.onclick = (e) => { e.preventDefault(); cancel(); };
+        }
+
+        function openConfirm(cfg) {
+            modalTitleEl.textContent = cfg.title || '';
+            modalFormEl.innerHTML = '';
+            const msg = document.createElement('div'); msg.textContent = cfg.message || ''; msg.style.fontSize = '12px'; msg.style.color = 'var(--text-sub)';
+            modalFormEl.appendChild(msg);
+            modalEl.classList.add('open');
+            modalSubmitEl.textContent = '确认';
+            modalCancelEl.textContent = '取消';
+            const confirm = async () => { modalEl.classList.remove('open'); if (typeof cfg.onConfirm === 'function') await cfg.onConfirm(); };
+            const cancel = () => { modalEl.classList.remove('open'); };
+            modalSubmitEl.onclick = (e) => { e.preventDefault(); confirm(); };
+            modalCancelEl.onclick = (e) => { e.preventDefault(); cancel(); };
+        }
+
+        (async function start(){
+            await storage.init();
+            await migrateFromLegacy(storage);
+            await seedIfEmpty(storage);
+            await loadAll();
+            render();
+        })();
+
+        fullscreenBtn.addEventListener('click', async () => {
+            if (!document.fullscreenElement) {
+                try { await document.documentElement.requestFullscreen(); } catch {}
+            } else {
+                try { await document.exitFullscreen(); } catch {}
+            }
+        });
+
+        function setFullscreenButton() {
+            const isFs = !!document.fullscreenElement;
+            fullscreenBtn.title = isFs ? '退出全屏' : '全屏';
+            if (fsIconEl) {
+                if (isFs) {
+                    fsIconEl.innerHTML = '';
+                    fsIconEl.setAttribute('viewBox','0 0 24 24');
+                    // compress icon
+                    fsIconEl.insertAdjacentHTML('beforeend', '<path d="M9 4H4v5"/><path d="M15 20h5v-5"/><path d="M9 20H4v-5"/><path d="M15 4h5v5"/>' );
+                } else {
+                    fsIconEl.innerHTML = '';
+                    fsIconEl.setAttribute('viewBox','0 0 24 24');
+                    // expand icon
+                    fsIconEl.insertAdjacentHTML('beforeend', '<path d="M4 9V4h5"/><path d="M20 15v5h-5"/><path d="M4 15v5h5"/><path d="M20 9V4h-5"/>' );
+                }
+            }
+        }
+        document.addEventListener('fullscreenchange', setFullscreenButton);
+        setFullscreenButton();
+    </script>
+</body>
+</html>
