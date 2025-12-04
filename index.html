@@ -57,8 +57,8 @@
         .brand-icon svg { width:14px; height:14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
         .brand-name { color: var(--accent-2); }
         .controls { display: flex; gap: 4px; margin-bottom: 0; }
-        .ctl-btn { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; background: transparent; border: 1px solid var(--border); color: var(--text-sub); border-radius: 6px; cursor: pointer; }
-        .ctl-btn:hover { color: var(--text-main); box-shadow: 0 0 12px var(--glow); border-color: var(--primary-color); }
+        .ctl-btn { display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; background: transparent; border: none; color: var(--text-sub); border-radius: 6px; cursor: pointer; }
+        .ctl-btn:hover { color: var(--text-main); box-shadow: 0 0 12px var(--glow); }
         .ctl-icon { width:12px; height:12px; stroke: currentColor; fill: none; stroke-width: 1.5; }
         .drag-handle { width:18px; height:18px; border:1px solid var(--border); border-radius:4px; display:inline-flex; align-items:center; justify-content:center; cursor:grab; color:var(--text-sub); margin-right:6px; background:transparent; }
         .drag-handle:active { cursor:grabbing; }
@@ -106,17 +106,19 @@
         }
         .m-title { font-weight: 600; display: block; margin-bottom: 2px; font-size: var(--font-size); }
         .m-status { font-size: var(--font-size-sm); color: var(--text-sub); }
+        .m-status-row { display:flex; align-items:center; gap:8px; }
+        .m-status-right { margin-left:auto; display:flex; align-items:center; gap:6px; }
         .m-row { display:flex; align-items:center; gap:6px; }
-        .menu-btn { margin-left:auto; width:24px; height:24px; border:1px solid var(--border); background:transparent; color:var(--text-sub); border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
-        .menu-btn:hover { color:var(--text-main); border-color:var(--primary-color); box-shadow:0 0 8px var(--glow); }
-        .menu { position:absolute; right:8px; top:28px; background:#0b1016; border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 20px rgba(0,0,0,0.3); display:none; min-width:120px; z-index:20; }
+        .menu-btn { margin-left:auto; width:18px; height:18px; border:none; background:transparent; color:var(--text-sub); border-radius:6px; cursor:pointer; display:flex; align-items:center; justify-content:center; }
+        .menu-btn:hover { color:var(--text-main); box-shadow:0 0 8px var(--glow); }
+        .menu { position:absolute; right:8px; top:22px; background:#0b1016; border:1px solid var(--border); border-radius:8px; box-shadow:0 10px 20px rgba(0,0,0,0.3); display:none; min-width:120px; z-index:20; }
         .menu.open { display:block; }
         .menu-item { padding:8px 10px; font-size: var(--font-size); color:var(--text-main); background:transparent; border:none; width:100%; text-align:left; cursor:pointer; }
         .menu-item:hover { background:#0c121a; }
         .m-title.completed { color: var(--text-sub); }
         .m-complete-icon { display:inline-flex; width:14px; height:14px; align-items:center; justify-content:center; color: var(--text-sub); }
         .m-complete-icon svg { width:14px; height:14px; stroke: currentColor; fill: none; stroke-width: 2; }
-        .m-progress { height: 2px; width: 100%; background-color: #1e2638; border-radius: 999px; margin-top: 6px; }
+        .m-progress { height: 2px; width: 100%; background-color: #1e2638; border-radius: 999px; margin: 2px 0 2px 0; }
         .m-progress-fill { height: 100%; background-color: var(--primary-color); width: 0%; border-radius: 999px; transition: width 0.4s ease; box-shadow: 0 0 8px var(--glow); }
 
         /* --- 右侧详情区域 --- */
@@ -174,7 +176,7 @@
         .task-content { display:flex; flex-direction:column; gap:4px; flex:1; min-width:0; }
         .task-desc { font-size: var(--font-size-sm); color: var(--text-sub); white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
         .task-actions { margin-left:auto; display:flex; gap:6px; position: relative; }
-        .task-actions .menu { right:0; top:24px; }
+        .task-actions .menu { right:0; top:20px; }
         .task-actions { flex:0 0 auto; align-self:flex-start; }
         
         .btn { padding: 6px 10px; background: transparent; border: 1px solid var(--border); border-radius: 6px; cursor: pointer; color: var(--text-sub); font-size: var(--font-size); }
@@ -594,11 +596,12 @@
                 const percent = computeMilestonePercent(m.id);
                 const tasksList = state.tasksByMilestone.get(m.id) || [];
                 const remaining = tasksList.filter(x => !x.done).length;
-                const dateText = m.dueDate ? ` · 日期: ${m.dueDate}` : (m.completedAt ? ` · 完成: ${m.completedAt}` : '');
-                const doneIcon = percent === 100 ? `<span class="m-complete-icon"><svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 7"/></svg></span>` : '';
                 const titleCls = percent === 100 ? 'm-title completed' : 'm-title';
                 const todoText = percent === 100 ? '' : ` · TODO: ${remaining}`;
-                li.innerHTML = `<div class="m-row">${doneIcon}<span class="${titleCls}">${m.title}</span><button class="menu-btn" data-action="menu" data-id="${m.id}">⋯</button></div><div class="m-progress"><div class="m-progress-fill" style="width:${percent}%"></div></div><span class="m-status">进度: ${percent}%${todoText}${dateText}</span><div class="menu" id="menu-${m.id}"><button class="menu-item" data-action="edit" data-id="${m.id}">编辑</button><button class="menu-item" data-action="delete" data-id="${m.id}">删除</button></div>`;
+                const rightDateHtml = percent === 100 && m.completedAt
+                    ? `<span class="m-status">${m.completedAt}</span><span class="m-complete-icon"><svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 7"/></svg></span>`
+                    : (m.dueDate ? `<span class="m-status">日期: ${m.dueDate}</span>` : '');
+                li.innerHTML = `<div class="m-row"><span class="${titleCls}">${m.title}</span><button class="menu-btn" data-action="menu" data-id="${m.id}">⋯</button></div><div class="m-progress"><div class="m-progress-fill" style="width:${percent}%"></div></div><div class="m-status-row"><span class="m-status">进度: ${percent}%${todoText}</span><span class="m-status-right">${rightDateHtml}</span></div><div class="menu" id="menu-${m.id}"><button class="menu-item" data-action="edit" data-id="${m.id}">编辑</button><button class="menu-item" data-action="delete" data-id="${m.id}">删除</button></div>`;
                 li.dataset.id = m.id;
                 li.setAttribute('draggable','true');
                 li.addEventListener('click', (e) => { const t = e.target; if (t instanceof HTMLElement && t.dataset.action) return; state.currentMilestoneId = m.id; render(); });
@@ -614,7 +617,7 @@
             currentTitleEl.className = percentForTitle === 100 ? 'milestone-header completed' : 'milestone-header';
             currentTitleEl.innerHTML = `${doneIconForTitle}${m.title}`;
             currentDescEl.innerText = m.desc;
-            const dateText = m.dueDate ? `日期: ${m.dueDate}` : (m.completedAt ? `完成: ${m.completedAt}` : '');
+            const dateText = (percentForTitle === 100 && m.completedAt) ? `完成: ${m.completedAt}` : (m.dueDate ? `日期: ${m.dueDate}` : '');
             const currentDateEl = document.getElementById('currentDate');
             if (currentDateEl) currentDateEl.innerText = dateText;
             const tasks = state.tasksByMilestone.get(m.id) || [];
@@ -715,6 +718,7 @@
             }
         });
 
+        function nowStr() { const d = new Date(); const p = (n)=>String(n).padStart(2,'0'); return `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`; }
         taskListEl.addEventListener('change', async (e) => {
             const t = e.target;
             if (!(t instanceof HTMLElement)) return;
@@ -725,7 +729,14 @@
                 const task = (state.tasksByMilestone.get(m.id)||[]).find(x => x.id === id);
                 if (!task) return;
                 await storage.tasks.update({ ...task, done: !!(t instanceof HTMLInputElement ? t.checked : false) });
-                await loadAll(); render();
+                await loadAll();
+                const percent = computeMilestonePercent(m.id);
+                const mm = state.milestones.find(x => x.id === m.id);
+                if (percent === 100 && mm && !mm.completedAt) {
+                    await storage.milestones.update({ ...mm, completedAt: nowStr() });
+                    await loadAll();
+                }
+                render();
             }
         });
 
