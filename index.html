@@ -742,9 +742,14 @@
                 await loadAll();
                 const percent = computeMilestonePercent(m.id);
                 const mm = state.milestones.find(x => x.id === m.id);
-                if (percent === 100 && mm && !mm.completedAt) {
-                    await storage.milestones.update({ ...mm, completedAt: nowStr() });
-                    await loadAll();
+                if (mm) {
+                    if (percent === 100) {
+                        await storage.milestones.update({ ...mm, completedAt: nowStr() });
+                        await loadAll();
+                    } else if (mm.completedAt) {
+                        await storage.milestones.update({ ...mm, completedAt: '' });
+                        await loadAll();
+                    }
                 }
                 render();
             }
