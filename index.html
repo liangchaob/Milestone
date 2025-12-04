@@ -77,11 +77,12 @@
         .percentage-label { fill: var(--text-main); font-family: sans-serif; font-weight: bold; font-size: 0.5em; text-anchor: middle; }
         .percentage-sub { fill: var(--text-sub); font-family: sans-serif; font-size: 0.35em; text-anchor: middle; }
         .total-label { margin-top: 6px; font-size: var(--font-size-sm); color: var(--text-sub); }
-        .goal-section { margin: 8px 0 12px 0; padding: 8px; border: none; border-radius: 8px; background: #0b1016; }
-        .goal-title { font-weight: 700; font-size: var(--font-size); color: var(--text-main); }
-        .goal-desc { font-size: var(--font-size-sm); color: var(--text-sub); margin-top: 6px; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
-        .goal-icon { display:inline-flex; width:14px; height:14px; align-items:center; justify-content:center; color: var(--accent-2); }
+        .goal-section { margin: 8px 0 12px 0; padding: 8px; border: none; border-radius: 8px; background: #0b1016; display:flex; align-items:flex-start; gap:6px; }
+        .goal-title { font-weight: 700; font-size: var(--font-size); color: var(--text-main); line-height: 14px; }
+        .goal-desc { font-size: var(--font-size-sm); color: var(--text-sub); margin-top: 2px; white-space: normal; word-break: break-word; overflow-wrap: anywhere; }
+        .goal-icon { display:inline-flex; width:14px; height:14px; align-items:center; justify-content:center; color: var(--accent-2); align-self:flex-start; margin-top: 3px; }
         .goal-icon svg { width:14px; height:14px; stroke: currentColor; fill: none; stroke-width: 1.6; }
+        .goal-content { display:flex; flex-direction:column; gap:2px; }
 
         /* 左侧里程碑列表 */
         .milestone-list { list-style: none; overflow-y: auto; flex: 1; scrollbar-width: thin; scrollbar-color: var(--border) #0b1016; }
@@ -234,8 +235,11 @@
             </svg>
         </div>
         <div class="goal-section">
-            <div class="m-row"><span class="goal-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2"/><path d="M19 5l-7 7"/><path d="M19 5v4"/><path d="M19 5h-4"/></svg></span><span class="goal-title" id="globalGoalTitle">总目标</span><button class="ctl-btn" id="editGoalBtn" title="编辑目标" style="margin-left:auto"><svg class="ctl-icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16 4l4 4L7 21H3v-4L16 4z"/></svg></button></div>
-            <p class="goal-desc" id="globalGoalDesc">针对目标的描述...</p>
+            <span class="goal-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="2"/><path d="M19 5l-7 7"/><path d="M19 5v4"/><path d="M19 5h-4"/></svg></span>
+            <div class="goal-content" style="flex:1;">
+                <div class="m-row"><span class="goal-title" id="globalGoalTitle">总目标</span><button class="ctl-btn" id="editGoalBtn" title="编辑目标" style="margin-left:auto"><svg class="ctl-icon" viewBox="0 0 24 24"><path d="M12 20h9"/><path d="M16 4l4 4L7 21H3v-4L16 4z"/></svg></button></div>
+                <p class="goal-desc" id="globalGoalDesc">针对目标的描述...</p>
+            </div>
         </div>
 
         <!-- 里程碑列表 -->
@@ -849,12 +853,20 @@
         });
 
         exportBtn.addEventListener('click', async () => {
-            const data = [];
+            const payload = {
+                meta: { title: state.meta.title || '', desc: state.meta.desc || '' },
+                milestones: []
+            };
             for (const m of state.milestones) {
                 const tasks = state.tasksByMilestone.get(m.id) || [];
-                data.push({ id: m.id, title: m.title, desc: m.desc, dueDate: m.dueDate || '', tasks: tasks.map(t => ({ id: t.id, text: t.text, desc: t.desc || '', done: t.done })) });
+                payload.milestones.push({
+                    title: m.title,
+                    desc: m.desc,
+                    dueDate: m.dueDate || '',
+                    tasks: tasks.map(t => ({ text: t.text, desc: t.desc || '', done: !!t.done }))
+                });
             }
-            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
             const a = document.createElement('a');
             a.href = URL.createObjectURL(blob);
             a.download = 'milestone-export.json';
@@ -867,16 +879,22 @@
             if (!file) return;
             const text = await file.text();
             let data; try { data = JSON.parse(text); } catch { data = null; }
-            if (!data || !Array.isArray(data)) return;
+            if (!data) return;
+            const isNew = typeof data === 'object' && !Array.isArray(data) && Array.isArray(data.milestones);
+            const items = isNew ? (data.milestones || []) : (Array.isArray(data) ? data : []);
             for (const m of await storage.milestones.getAll()) { await storage.tasks.deleteByMilestone(m.id); await storage.milestones.delete(m.id); }
-            for (const m of data) {
+            if (isNew) {
+                try { await storage.meta.set({ title: (data.meta&&data.meta.title)||'', desc: (data.meta&&data.meta.desc)||'' }); } catch {}
+                state.meta = { title: (data.meta&&data.meta.title)||'', desc: (data.meta&&data.meta.desc)||'' };
+            }
+            for (const m of items) {
                 const mid = uid();
                 await storage.milestones.create({ id: mid, title: m.title || '', desc: m.desc || '', dueDate: m.dueDate || '', createdAt: Date.now() });
                 for (const t of (m.tasks||[])) {
                     await storage.tasks.create({ id: uid(), milestoneId: mid, text: t.text || '', desc: t.desc || '', done: !!t.done, createdAt: Date.now() });
                 }
             }
-            await loadAll(); render();
+            await loadAll(); renderGoal(); render();
             importInput.value = '';
         });
 
