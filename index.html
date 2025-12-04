@@ -304,6 +304,8 @@
         const globalGoalDescEl = document.getElementById('globalGoalDesc');
         const editGoalBtn = document.getElementById('editGoalBtn');
 
+        function escapeHTML(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;','\'':'&#39;'}[c])); }
+
         function renderGoal() {
             if (globalGoalTitleEl) globalGoalTitleEl.textContent = state.meta.title || '总目标';
             if (globalGoalDescEl) globalGoalDescEl.textContent = state.meta.desc || '针对目标的描述...';
@@ -611,7 +613,7 @@
                 const rightDateHtml = percent === 100 && m.completedAt
                     ? `<span class="m-status">${m.completedAt}</span><span class="m-complete-icon"><svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 7"/></svg></span>`
                     : (m.dueDate ? `<span class="m-status">日期: ${m.dueDate}</span>` : '');
-                li.innerHTML = `<div class="m-row"><span class="${titleCls}">${m.title}</span><button class="menu-btn" data-action="menu" data-id="${m.id}">⋯</button></div><div class="m-progress"><div class="m-progress-fill" style="width:${percent}%"></div></div><div class="m-status-row"><span class="m-status">进度: ${percent}%${todoText}</span><span class="m-status-right">${rightDateHtml}</span></div><div class="menu" id="menu-${m.id}"><button class="menu-item" data-action="edit" data-id="${m.id}">编辑</button><button class="menu-item" data-action="delete" data-id="${m.id}">删除</button></div>`;
+                li.innerHTML = `<div class="m-row"><span class="${titleCls}">${escapeHTML(m.title)}</span><button class="menu-btn" data-action="menu" data-id="${m.id}">⋯</button></div><div class="m-progress"><div class="m-progress-fill" style="width:${percent}%"></div></div><div class="m-status-row"><span class="m-status">进度: ${percent}%${todoText}</span><span class="m-status-right">${rightDateHtml}</span></div><div class="menu" id="menu-${m.id}"><button class="menu-item" data-action="edit" data-id="${m.id}">编辑</button><button class="menu-item" data-action="delete" data-id="${m.id}">删除</button></div>`;
                 li.dataset.id = m.id;
                 li.setAttribute('draggable','true');
                 li.addEventListener('click', (e) => { const t = e.target; if (t instanceof HTMLElement && t.dataset.action) return; state.currentMilestoneId = m.id; render(); });
@@ -625,7 +627,7 @@
             const percentForTitle = computeMilestonePercent(m.id);
             const doneIconForTitle = percentForTitle === 100 ? '<span class="m-complete-icon"><svg viewBox="0 0 24 24"><path d="M5 12l4 4L19 7"/></svg></span>' : '';
             currentTitleEl.className = percentForTitle === 100 ? 'milestone-header completed' : 'milestone-header';
-            currentTitleEl.innerHTML = `${doneIconForTitle}${m.title}`;
+            currentTitleEl.innerHTML = `${doneIconForTitle}${escapeHTML(m.title)}`;
             currentDescEl.innerText = m.desc;
             const dateText = (percentForTitle === 100 && m.completedAt) ? `完成: ${m.completedAt}` : (m.dueDate ? `日期: ${m.dueDate}` : '');
             const currentDateEl = document.getElementById('currentDate');
@@ -645,8 +647,8 @@
             for (const t of tasks) {
                 const div = document.createElement('div');
                 div.className = `task-item ${t.done ? 'completed' : ''}`;
-                const descHtml = t.desc ? `<div class=\"task-desc\">${t.desc}</div>` : '';
-                div.innerHTML = `<input type=\"checkbox\" class=\"task-checkbox\" data-id=\"${t.id}\" ${t.done ? 'checked' : ''}><div class=\"task-content\"><span class=\"task-text\">${t.text}</span>${descHtml}</div><div class=\"task-actions\"><button class=\"menu-btn\" data-action=\"task-menu\" data-id=\"${t.id}\">⋯</button><div class=\"menu\" id=\"task-menu-${t.id}\"><button class=\"menu-item\" data-action=\"task-edit\" data-id=\"${t.id}\">编辑</button><button class=\"menu-item\" data-action=\"task-delete\" data-id=\"${t.id}\">删除</button></div></div>`;
+                const descHtml = t.desc ? `<div class=\"task-desc\">${escapeHTML(t.desc)}</div>` : '';
+                div.innerHTML = `<input type=\"checkbox\" class=\"task-checkbox\" data-id=\"${t.id}\" ${t.done ? 'checked' : ''}><div class=\"task-content\"><span class=\"task-text\">${escapeHTML(t.text)}</span>${descHtml}</div><div class=\"task-actions\"><button class=\"menu-btn\" data-action=\"task-menu\" data-id=\"${t.id}\">⋯</button><div class=\"menu\" id=\"task-menu-${t.id}\"><button class=\"menu-item\" data-action=\"task-edit\" data-id=\"${t.id}\">编辑</button><button class=\"menu-item\" data-action=\"task-delete\" data-id=\"${t.id}\">删除</button></div></div>`;
                 div.dataset.id = t.id;
                 div.setAttribute('draggable','true');
                 taskListEl.appendChild(div);
