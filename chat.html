@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milestone — 对话</title>
+    <link rel="icon" href="milestone.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="milestone.ico" type="image/x-icon">
+    <style>
+        :root { --primary-color:#00eaff; --bg-color:#0b0e14; --card-bg:#0f131a; --text-main:#e6edf3; --text-sub:#8892b0; --border:#1a1f2b; --glow:rgba(0,234,255,0.25); --font-size:12px; --font-size-sm:11px; }
+        * { box-sizing:border-box; margin:0; padding:0; font-family: JetBrains Mono, Consolas, Monaco, monospace; }
+        body { background:var(--bg-color); color:var(--text-main); min-height:100vh; display:flex; justify-content:center; }
+        .container { width:clamp(320px, 80vw, 960px); padding: 18px; }
+        .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; }
+        .brand { display:flex; align-items:center; gap:6px; }
+        .brand-icon svg { width:14px; height:14px; stroke:#ff5a3c; fill:none; stroke-width:1.6; }
+        .title { font-size:18px; font-weight:800; }
+        .goal { color:var(--text-sub); font-size:var(--font-size); margin:6px 0 12px; }
+        .card { background:var(--card-bg); border:1px solid var(--border); border-radius:12px; box-shadow:0 0 0 1px var(--border); padding:12px; }
+        .chat { display:flex; flex-direction:column; gap:8px; height:60vh; min-height:320px; overflow:auto; border:1px solid var(--border); border-radius:8px; padding:8px; background:#0b1016; }
+        .msg { max-width: 80%; padding:8px 10px; border-radius:10px; font-size: var(--font-size); white-space: pre-wrap; word-break: break-word; }
+        .msg-ai { align-self:flex-start; background:#0e1420; border:1px solid #1a2537; }
+        .msg-user { align-self:flex-end; background:#132016; border:1px solid #233a20; }
+        .input-row { display:flex; gap:8px; margin-top:10px; }
+        .input { flex:1; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:#0b1016; color:var(--text-main); font-size: var(--font-size); }
+        .input:focus { outline:none; border-color:var(--primary-color); box-shadow:0 0 8px var(--glow); }
+        .btn { padding:8px 12px; border:1px solid var(--border); border-radius:8px; background:transparent; color:var(--text-main); cursor:pointer; }
+        .btn:hover { border-color: var(--primary-color); box-shadow:0 0 12px var(--glow); }
+        .btn[disabled] { opacity:0.5; cursor:not-allowed; }
+        .status { font-size: var(--font-size-sm); color: var(--text-sub); margin-top: 6px; }
+        .cfg { display:flex; gap:8px; margin-top:8px; align-items:center; }
+        .cfg input { padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:#0b1016; color:var(--text-main); font-size: var(--font-size); }
+        .debug { margin-top:8px; font-size: var(--font-size-sm); border:1px solid var(--border); border-radius:8px; background:#0b1016; padding:8px; color: var(--text-sub); }
+        .debug pre { white-space: pre-wrap; word-break: break-word; margin:0; }
+    </style>
+    <script type="module">
+        const qs = new URLSearchParams(location.search);
+        const goal = qs.get('goal') || '';
+        let config = { baseUrl: 'https://api.moonshot.cn/v1', model: '', apiKey: '' };
+        let configSource = '';
+        const messages = [];
+        const chatEl = document.createElement('div'); chatEl.className = 'chat';
+        function maskKey(k) { if (!k) return ''; const s = (k||'').trim(); if (!s) return ''; const start = s.slice(0, 6); const end = s.slice(-4); return start + '...' + end; }
+        function pushMsg(text, who) { const m = document.createElement('div'); m.className = `msg ${who==='ai'?'msg-ai':'msg-user'}`; m.textContent = text; chatEl.appendChild(m); chatEl.scrollTop = chatEl.scrollHeight; return m; }
+        function showRequest(url, body) { const el = document.getElementById('reqInfo'); if (!el) return; const info = { url, headers: { Authorization: 'Bearer ' + maskKey(config.apiKey), 'Content-Type': 'application/json' }, body }; el.textContent = JSON.stringify(info, null, 2); }
+        function appendResponse(text) { const el = document.getElementById('reqInfo'); if (!el) return; el.textContent += "\n\n响应: " + text; }
+        async function loadConfig() {
+            let ok = false;
+            if (!ok) { ok = await loadViaFetch('apikey.json?ts=' + Date.now()); if (ok) { configSource = 'file'; } }
+            if (!ok) { const abs = new URL('apikey.json?ts=' + Date.now(), location.href).href; ok = await loadViaFetch(abs); if (ok) { configSource = 'file'; } }
+            if (!ok) { ok = await loadViaXHR('apikey.json?ts=' + Date.now()); if (ok) { configSource = 'file'; } }
+            if (!ok) { ok = await loadConfigIframe(); if (ok) { configSource = 'file'; } }
+            
+            return ok;
+        }
+        async function pickConfigFile() {
+            if (window.showOpenFilePicker) {
+                try {
+                    const [h] = await window.showOpenFilePicker({ types:[{ description:'JSON', accept:{ 'application/json':['.json'] } }] });
+                    const f = await h.getFile();
+                    const txt = await f.text();
+                    const j = JSON.parse(txt);
+                    applyConfig(j);
+                    configSource = 'picked';
+                    return true;
+                } catch { return false; }
+            } else {
+                return await pickViaInput();
+            }
+        }
+        function pickViaInput() {
+            return new Promise((resolve) => {
+                const inp = document.createElement('input'); inp.type = 'file'; inp.accept = '.json,application/json'; inp.style.display = 'none';
+                inp.onchange = async () => {
+                    try { const f = inp.files && inp.files[0]; if (!f) { resolve(false); return; } const txt = await f.text(); const j = JSON.parse(txt); applyConfig(j); configSource = 'picked'; resolve(true); }
+                    catch { resolve(false); }
+                    document.body.removeChild(inp);
+                };
+                document.body.appendChild(inp); inp.click();
+                setTimeout(() => { try { document.body.removeChild(inp); } catch {} resolve(false); }, 10000);
+            });
+        }
+        async function loadViaFetch(url) {
+            try {
+                const r = await fetch(url, { cache:'no-store' });
+                if (!r.ok) return false;
+                const j = await r.json();
+                applyConfig(j);
+                return !!config.apiKey;
+            } catch { return false; }
+        }
+        function loadViaXHR(url) {
+            return new Promise((resolve) => {
+                try {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('GET', url, true);
+                    xhr.overrideMimeType('application/json');
+                    xhr.onreadystatechange = () => {
+                        if (xhr.readyState === 4) {
+                            try { if (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 300)) { const j = JSON.parse(xhr.responseText || '{}'); applyConfig(j); resolve(!!config.apiKey); } else { resolve(false); } }
+                            catch { resolve(false); }
+                        }
+                    };
+                    xhr.send();
+                } catch { resolve(false); }
+            });
+        }
+        function applyConfig(j) {
+            if (!j || typeof j !== 'object') return;
+            const mdl = j.model || config.model || '';
+            const key = j.api_key || j.key || config.apiKey || '';
+            const base = j.base_url || config.baseUrl;
+            config.model = (mdl || '').trim();
+            config.apiKey = (key || '').trim();
+            config.baseUrl = (base || '').trim();
+        }
+        function loadConfigIframe() {
+            return new Promise((resolve) => {
+                const f = document.createElement('iframe'); f.style.display = 'none'; f.src = 'apikey.json?ts=' + Date.now();
+                f.onload = () => { try { const txt = f.contentDocument && f.contentDocument.body && (f.contentDocument.body.innerText || f.contentDocument.body.textContent) || ''; const j = JSON.parse(txt || '{}'); config.model = j.model || config.model || ''; config.apiKey = j.api_key || j.key || config.apiKey || ''; config.baseUrl = j.base_url || config.baseUrl; resolve(!!config.apiKey); } catch { resolve(false); } document.body.removeChild(f); };
+                document.body.appendChild(f);
+                setTimeout(() => { try { document.body.removeChild(f); } catch {} resolve(false); }, 3000);
+            });
+        }
+        async function streamChat(userText, onDelta) {
+            messages.push({ role: 'user', content: userText });
+            const body = { model: config.model || 'moonshot-v1-8k', messages, stream: true };
+            showRequest(config.baseUrl + '/chat/completions', body);
+            const r = await fetch(config.baseUrl + '/chat/completions', { method:'POST', headers:{ 'Authorization':'Bearer ' + config.apiKey, 'Content-Type':'application/json', 'Accept':'text/event-stream' }, body: JSON.stringify(body) });
+            if (!r.ok) { const txt = await r.text(); appendResponse('HTTP ' + r.status + ' ' + txt); throw new Error('HTTP ' + r.status + ' ' + txt); }
+            if (!r.body) { const j = await r.json().catch(() => ({})); const c = j && j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content; if (c) { messages.push({ role:'assistant', content: c }); onDelta(c); return c; } throw new Error('No stream'); }
+            const reader = r.body.getReader(); const dec = new TextDecoder('utf-8'); let buf=''; let acc='';
+            while (true) { const { value, done } = await reader.read(); if (done) break; buf += dec.decode(value, { stream:true }); const parts = buf.split('\n'); for (const raw of parts) { const line = raw.trim(); if (!line.startsWith('data:')) continue; const payload = line.slice(5).trim(); if (payload === '[DONE]') { messages.push({ role:'assistant', content: acc }); return acc; } try { const j = JSON.parse(payload); const d = j.choices && j.choices[0] && j.choices[0].delta; if (d && d.content) { acc += d.content; onDelta(d.content); } } catch {} } buf=''; }
+            messages.push({ role:'assistant', content: acc }); return acc;
+        }
+        function ensureConfigUI() {
+            if (config.apiKey) return;
+            const wrap = document.getElementById('cfgWrap');
+            wrap.innerHTML = '';
+            const keyInput = document.createElement('input'); keyInput.placeholder = '粘贴 API Key';
+            const modelInput = document.createElement('input'); modelInput.placeholder = '模型 ID，例如 moonshot-v1-8k';
+            const saveBtn = document.createElement('button'); saveBtn.className = 'btn'; saveBtn.textContent = '保存';
+            wrap.appendChild(keyInput); wrap.appendChild(modelInput); wrap.appendChild(saveBtn);
+            saveBtn.onclick = () => {
+                config.apiKey = (keyInput.value || '').trim();
+                config.model = (modelInput.value || 'moonshot-v1-8k').trim();
+                wrap.innerHTML = '';
+            };
+        }
+        window.addEventListener('DOMContentLoaded', async () => {
+            const goalEl = document.getElementById('goal');
+            const statusEl = document.getElementById('status');
+            const inputEl = document.getElementById('input');
+            const sendBtnEl = document.getElementById('sendBtn');
+            const authBtnEl = document.getElementById('authBtn');
+            const fileBtnEl = document.getElementById('fileBtn');
+            const pickBtnEl = document.getElementById('pickBtn');
+            const resetBtnEl = document.getElementById('resetBtn');
+            const cardEl = document.getElementById('card');
+            cardEl.insertBefore(chatEl, cardEl.firstChild);
+            goalEl.textContent = goal ? `目标：${goal}` : '';
+            await loadConfig(); ensureConfigUI();
+            if (config.apiKey) { const w = document.getElementById('cfgWrap'); w.innerHTML = ''; }
+            statusEl.textContent = `配置：${config.baseUrl || '未设置'} · ${config.model || '未设置'} · 来源：${configSource || '未知'}`;
+            sendBtnEl.onclick = async () => {
+                const t = (inputEl.value || '').trim(); if (!t) return; sendBtnEl.disabled = true; statusEl.textContent = '正在生成...'; const um = pushMsg(t, 'user'); inputEl.value=''; const am = pushMsg('', 'ai');
+                try {
+                    if (!config.apiKey) throw new Error('未配置 API Key');
+                    await streamChat(t, (delta) => { am.textContent += delta; }); statusEl.textContent = '完成';
+                } catch (err) { statusEl.textContent = '失败：' + String(err && err.message || err); }
+                finally { sendBtnEl.disabled = false; }
+            };
+            if (authBtnEl) {
+                authBtnEl.onclick = async () => {
+                    try {
+                        if (!config.apiKey) throw new Error('未配置 API Key');
+                        statusEl.textContent = '测试鉴权中...';
+                        const body = { model: config.model || 'moonshot-v1-8k', messages: [{ role:'user', content:'ping' }], stream: false, max_tokens: 16 };
+                        showRequest(config.baseUrl + '/chat/completions', body);
+                        const r = await fetch(config.baseUrl + '/chat/completions', { method:'POST', headers:{ 'Authorization':'Bearer ' + config.apiKey, 'Content-Type':'application/json', 'Accept':'application/json' }, body: JSON.stringify(body) });
+                        const txt = await r.text();
+                        if (!r.ok) { statusEl.textContent = '鉴权失败：HTTP ' + r.status + ' ' + txt; appendResponse('HTTP ' + r.status + ' ' + txt); return; }
+                        statusEl.textContent = '鉴权成功';
+                    } catch (err) { statusEl.textContent = '鉴权异常：' + String(err && err.message || err); }
+                };
+            }
+            if (fileBtnEl) {
+                fileBtnEl.onclick = async () => {
+                    const ok1 = await loadViaFetch('apikey.json?ts=' + Date.now());
+                    const ok2 = ok1 ? true : await loadConfigIframe();
+                    if (ok1 || ok2) {
+                        configSource = 'file';
+                        statusEl.textContent = `配置：${config.baseUrl || '未设置'} · ${config.model || '未设置'} · 来源：${configSource || '未知'}`;
+                    } else {
+                        statusEl.textContent = '读取文件失败';
+                    }
+                };
+            }
+            if (pickBtnEl) {
+                pickBtnEl.onclick = async () => {
+                    const ok = await pickConfigFile();
+                    if (ok) { statusEl.textContent = `配置：${config.baseUrl || '未设置'} · ${config.model || '未设置'} · 来源：${configSource || '未知'}`; }
+                    else { statusEl.textContent = '选择文件失败'; }
+                };
+            }
+            if (resetBtnEl) {
+                resetBtnEl.onclick = () => { location.reload(); };
+            }
+        });
+    </script>
+</head>
+<body>
+    <div class="container">
+        <div class="topbar">
+            <div class="brand"><span class="brand-icon"><svg viewBox="0 0 24 24"><path d="M6 20V4"/><path d="M6 4h9l-2.5 3L15 10H6"/></svg></span><span class="title">Milestone</span></div>
+            <div><a class="btn" href="index.html">返回应用</a></div>
+        </div>
+        <div class="goal" id="goal"></div>
+        <div class="card" id="card">
+            <div class="input-row">
+                <input class="input" id="input" placeholder="在此输入，与大模型对话" />
+                <button class="btn" id="sendBtn">发送</button>
+            </div>
+            <div class="status" id="status"></div>
+            <div class="cfg" id="cfgWrap"></div>
+            <div class="input-row"><button class="btn" id="authBtn">测试鉴权</button><button class="btn" id="fileBtn">读取文件配置</button><button class="btn" id="pickBtn">选择 apikey.json</button><button class="btn" id="resetBtn">重置配置</button></div>
+            <div class="debug"><pre id="reqInfo"></pre></div>
+        </div>
+    </div>
+</body>
+</html>

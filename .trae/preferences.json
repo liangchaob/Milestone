@@ -1,0 +1,42 @@
+{
+  "profile": "default",
+  "language": {
+    "primary": "JavaScript",
+    "alternate": ["TypeScript"]
+  },
+  "frontend": {
+    "framework": "vanilla",
+    "state": "none",
+    "styling": { "method": "css", "variables": true },
+    "bundler": "none"
+  },
+  "backend": {
+    "framework": "none",
+    "runtime": { "node": ">=18" },
+    "packageManager": "npm"
+  },
+  "testing": {
+    "frontend": "none",
+    "backend": "none"
+  },
+  "libraries": {
+    "allowList": [],
+    "blockList": []
+  },
+  "database": {
+    "type": "none"
+  },
+  "codeStyle": {
+    "naming": "descriptive",
+    "maxFunctionLines": 60,
+    "maxNesting": 3,
+    "preferPureFunctions": true
+  },
+  "aiGeneration": {
+    "enforceMaintainability": true,
+    "limitComplexity": 10,
+    "requireExplanation": true,
+    "requireTweakPoints": true,
+    "noExtraDeps": true
+  }
+}

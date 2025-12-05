@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Milestone — 首页</title>
+    <link rel="icon" href="milestone.ico" type="image/x-icon">
+    <link rel="shortcut icon" href="milestone.ico" type="image/x-icon">
+    <style>
+        :root {
+            --primary-color: #00eaff;
+            --bg-color: #0b0e14;
+            --card-bg: #0f131a;
+            --text-main: #e6edf3;
+            --text-sub: #8892b0;
+            --border: #1a1f2b;
+            --glow: rgba(0,234,255,0.25);
+            --font-size: 12px;
+            --font-size-sm: 11px;
+        }
+        * { box-sizing: border-box; margin:0; padding:0; font-family: JetBrains Mono, Consolas, Monaco, monospace; }
+        body { background: var(--bg-color); color: var(--text-main); min-height:100vh; display:flex; align-items:center; justify-content:center; }
+        .container { width: clamp(320px, 60vw, 820px); padding: 28px; background: var(--card-bg); border:1px solid var(--border); border-radius: 12px; box-shadow: 0 0 0 1px var(--border); }
+        .topbar { display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px; }
+        .brand { display:flex; align-items:center; gap:6px; }
+        .brand-icon svg { width:14px; height:14px; stroke: #ff5a3c; fill:none; stroke-width:1.6; }
+        .title { font-size: 18px; font-weight: 800; }
+        .desc { color: var(--text-sub); font-size: var(--font-size); margin: 10px 0 16px; }
+        .label { font-weight: 700; font-size: var(--font-size); color: var(--text-main); margin: 8px 0 6px; }
+        .row { display:flex; gap:8px; align-items:center; }
+        .input { flex:1; padding:8px 10px; border:1px solid var(--border); border-radius:8px; background:#0b1016; color:var(--text-main); font-size: var(--font-size); }
+        .input:focus { outline:none; border-color:var(--primary-color); box-shadow:0 0 8px var(--glow); }
+        .btn { padding:8px 12px; border:1px solid var(--border); border-radius:8px; background:transparent; color:var(--text-main); cursor:pointer; }
+        .btn:hover { border-color: var(--primary-color); box-shadow:0 0 12px var(--glow); }
+
+        .modal { position:fixed; inset:0; background:rgba(0,0,0,0.5); display:none; align-items:center; justify-content:center; z-index:50; }
+        .modal.open { display:flex; }
+        .dialog { background:#0f131a; border:1px solid var(--border); border-radius:10px; width:clamp(320px, 48vw, 560px); max-width:95vw; padding:16px; box-shadow:0 20px 40px rgba(0,0,0,0.5); }
+        .dialog-title { font-weight:700; margin-bottom:10px; font-size: var(--font-size); }
+        .dialog-form { display:flex; flex-direction:column; gap:10px; }
+        .chat { display:flex; flex-direction:column; gap:8px; height: 48vh; min-height:260px; max-height:60vh; overflow:auto; border:1px solid var(--border); border-radius:8px; padding:8px; background:#0b1016; }
+        .msg { max-width: 80%; padding:8px 10px; border-radius:10px; font-size: var(--font-size); white-space: pre-wrap; word-break: break-word; }
+        .msg-ai { align-self:flex-start; background:#0e1420; border:1px solid #1a2537; }
+        .msg-user { align-self:flex-end; background:#132016; border:1px solid #233a20; }
+        .chat-input-row { display:flex; gap:8px; }
+        .textarea { padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:#0b1016; color:var(--text-main); font-size: var(--font-size); resize: vertical; min-height:68px; width:100%; }
+        .actions { display:flex; justify-content:flex-end; gap:8px; margin-top:10px; }
+        .btn[disabled] { opacity:0.5; cursor:not-allowed; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="topbar">
+            <div class="brand"><span class="brand-icon"><svg viewBox="0 0 24 24"><path d="M6 20V4"/><path d="M6 4h9l-2.5 3L15 10H6"/></svg></span><span class="title">Milestone</span></div>
+            <div><a class="btn" href="index.html">进入应用</a></div>
+        </div>
+        <div class="desc">一个本地单页工具，帮你把“我想做的事”拆成可执行的总目标、里程碑与任务。请输入你的愿望或目标，进入对话收集关键信息并生成计划。</div>
+        <div class="label">I wanna ...</div>
+        <div class="row">
+            <input class="input" id="homeInput" placeholder="请输入你想做的事（支持中文/英文），例如：发布一个副业项目 / Launch a side project" />
+            <button class="btn" id="homeStartBtn">开始</button>
+        </div>
+    </div>
+
+    <div class="modal" id="modal">
+        <div class="dialog">
+            <div class="dialog-title" id="modalTitle">AI 生成计划</div>
+            <form class="dialog-form" id="modalForm"></form>
+            <div class="actions">
+                <button class="btn" id="modalCancel">取消</button>
+                <button class="btn" id="modalSubmit">生成</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const modalEl = document.getElementById('modal');
+        const modalFormEl = document.getElementById('modalForm');
+        const modalCancelEl = document.getElementById('modalCancel');
+        const modalSubmitEl = document.getElementById('modalSubmit');
+        const homeInputEl = document.getElementById('homeInput');
+        const homeStartBtnEl = document.getElementById('homeStartBtn');
+        
+        async function syncMoonshotConfig() {
+            const urls = ['apikey.json?ts=' + Date.now(), new URL('apikey.json?ts=' + Date.now(), location.href).href];
+            for (const u of urls) { const ok = await loadViaFetch(u); if (ok) return true; }
+            if (await loadViaXHR('apikey.json?ts=' + Date.now())) return true;
+            if (await loadConfigIframe()) return true;
+            return false;
+        }
+        async function loadViaFetch(url) {
+            try {
+                const r = await fetch(url, { cache:'no-store' });
+                if (!r.ok) return false;
+                const j = await r.json();
+                const payload = { apiKey: (j.api_key || j.key || '').trim(), model: (j.model || '').trim(), baseUrl: (j.base_url || 'https://api.moonshot.cn/v1').trim() };
+                if (payload.apiKey) { return true; }
+                return false;
+            } catch { return false; }
+        }
+        function loadViaXHR(url) {
+            return new Promise((resolve) => {
+                try {
+                    const xhr = new XMLHttpRequest();
+                    xhr.open('GET', url, true);
+                    xhr.overrideMimeType('application/json');
+                    xhr.onreadystatechange = () => {
+                        if (xhr.readyState === 4) {
+                            try {
+                                if (xhr.status === 0 || (xhr.status >= 200 && xhr.status < 300)) {
+                                    const j = JSON.parse(xhr.responseText || '{}');
+                                    const payload = { apiKey: (j.api_key || j.key || '').trim(), model: (j.model || '').trim(), baseUrl: (j.base_url || 'https://api.moonshot.cn/v1').trim() };
+                                    if (payload.apiKey) { resolve(true); } else { resolve(false); }
+                                } else { resolve(false); }
+                            } catch { resolve(false); }
+                        }
+                    };
+                    xhr.send();
+                } catch { resolve(false); }
+            });
+        }
+        function loadConfigIframe() {
+            return new Promise((resolve) => {
+                const f = document.createElement('iframe'); f.style.display = 'none'; f.src = 'apikey.json?ts=' + Date.now();
+                f.onload = () => {
+                    try {
+                        const txt = f.contentDocument && f.contentDocument.body && (f.contentDocument.body.innerText || f.contentDocument.body.textContent) || '';
+                        const j = JSON.parse(txt || '{}');
+                        const payload = { apiKey: (j.api_key || j.key || '').trim(), model: (j.model || '').trim(), baseUrl: (j.base_url || 'https://api.moonshot.cn/v1').trim() };
+                        if (payload.apiKey) { resolve(true); } else { resolve(false); }
+                    } catch { resolve(false); }
+                    document.body.removeChild(f);
+                };
+                document.body.appendChild(f);
+                setTimeout(() => { try { document.body.removeChild(f); } catch {} resolve(false); }, 3000);
+            });
+        }
+
+        function supportsIDB() { return typeof indexedDB !== 'undefined'; }
+        function openDB() {
+            return new Promise((resolve, reject) => {
+                const req = indexedDB.open('milestone-db', 2);
+                req.onupgradeneeded = () => {
+                    const db = req.result;
+                    if (!db.objectStoreNames.contains('milestones')) db.createObjectStore('milestones', { keyPath: 'id' });
+                    if (!db.objectStoreNames.contains('tasks')) {
+                        const store = db.createObjectStore('tasks', { keyPath: 'id' });
+                        store.createIndex('milestoneId', 'milestoneId');
+                    }
+                    if (!db.objectStoreNames.contains('meta')) db.createObjectStore('meta', { keyPath: 'key' });
+                };
+                req.onsuccess = () => resolve(req.result);
+                req.onerror = () => reject(req.error);
+            });
+        }
+        function uid() {
+            if (crypto && crypto.randomUUID) return crypto.randomUUID();
+            return 'id-' + Date.now().toString(36) + Math.random().toString(36).slice(2,8);
+        }
+        async function writeToIDB(payload) {
+            const db = await openDB();
+            await new Promise((resolve) => {
+                const tx1 = db.transaction('milestones', 'readwrite'); tx1.objectStore('milestones').clear(); tx1.oncomplete = resolve;
+            });
+            await new Promise((resolve) => {
+                const tx2 = db.transaction('tasks', 'readwrite'); tx2.objectStore('tasks').clear(); tx2.oncomplete = resolve;
+            });
+            await new Promise((resolve) => {
+                const tx3 = db.transaction('meta', 'readwrite'); tx3.objectStore('meta').put({ key:'global', title: payload.meta.title || '', desc: payload.meta.desc || '' }); tx3.oncomplete = resolve;
+            });
+            for (const m of payload.milestones) {
+                await new Promise((resolve) => {
+                    const tx = db.transaction('milestones', 'readwrite'); tx.objectStore('milestones').add({ id: uid(), title: m.title, desc: m.desc, dueDate: m.dueDate || '', createdAt: Date.now() }); tx.oncomplete = resolve;
+                });
+                const txTasks = db.transaction('tasks', 'readwrite');
+                const storeTasks = txTasks.objectStore('tasks');
+                const mid = await new Promise((resolve) => {
+                    const tx = db.transaction('milestones', 'readonly');
+                    const store = tx.objectStore('milestones');
+                    const getAllReq = store.getAll();
+                    getAllReq.onsuccess = () => resolve(getAllReq.result[getAllReq.result.length - 1].id);
+                });
+                let order = 0;
+                for (const t of m.tasks) {
+                    await new Promise((resolve) => { storeTasks.add({ id: uid(), milestoneId: mid, text: t.text, desc: t.desc || '', done: !!t.done, createdAt: Date.now(), order: order++ }); resolve(); });
+                }
+            }
+        }
+        function writeToLocalStorage(payload) {
+            const KEY = 'milestone.storage';
+            const META_KEY = 'milestone.meta';
+            const list = [];
+            let order = 0;
+            for (const m of payload.milestones) {
+                const mid = uid();
+                const tasks = [];
+                let ti = 0;
+                for (const t of m.tasks) { tasks.push({ id: uid(), text: t.text, desc: t.desc || '', done: !!t.done, createdAt: Date.now(), order: ti++ }); }
+                list.push({ id: mid, title: m.title, desc: m.desc, dueDate: m.dueDate || '', createdAt: Date.now(), order: order++, tasks });
+            }
+            localStorage.setItem(KEY, JSON.stringify(list));
+            localStorage.setItem(META_KEY, JSON.stringify({ title: payload.meta.title || '', desc: payload.meta.desc || '' }));
+        }
+
+        function openChat(baseText) {
+            modalFormEl.innerHTML = '';
+            const chat = document.createElement('div'); chat.className = 'chat'; modalFormEl.appendChild(chat);
+            const inputRow = document.createElement('div'); inputRow.className = 'chat-input-row';
+            const input = document.createElement('input'); input.className = 'input'; input.placeholder = '请输入你的回答...'; inputRow.appendChild(input);
+            const sendBtn = document.createElement('button'); sendBtn.className = 'btn'; sendBtn.textContent = '发送'; inputRow.appendChild(sendBtn);
+            modalFormEl.appendChild(inputRow);
+            modalSubmitEl.textContent = '生成'; modalSubmitEl.disabled = true;
+            const steps = [
+                { key: 'goal', q: `收到你的愿望「${baseText}」。请用一句话描述你的具体目标` },
+                { key: 'background', q: '请简述当前背景/现状（处于什么阶段、已完成哪些部分）' },
+                { key: 'resources', q: '列出可用资源（团队与技能、资金、时间、工具、现有素材等）' },
+                { key: 'deadline', q: '给出时间范围/截止期（例如：6周内完成/具体日期）' },
+                { key: 'milestoneCount', q: '希望规划几个里程碑？请输入 3-6 的数字（建议 4）' }
+            ];
+            let idx = 0; const answers = {};
+            function pushMsg(text, who) { const m = document.createElement('div'); m.className = `msg ${who==='ai'?'msg-ai':'msg-user'}`; m.textContent = text; chat.appendChild(m); chat.scrollTop = chat.scrollHeight; }
+            function ask() { const s = steps[idx]; pushMsg(s.q, 'ai'); }
+            function saveAnswer(val) { const s = steps[idx]; answers[s.key] = val.trim(); }
+            function validateAll() { const ok = steps.every(s => !!(answers[s.key]||'').trim()); modalSubmitEl.disabled = !ok || !answers.goal; }
+            sendBtn.onclick = (e) => { e.preventDefault(); const val = (input.value||'').trim(); if (!val) return; pushMsg(val, 'user'); saveAnswer(val); input.value=''; idx = Math.min(steps.length-1, idx+1); if (idx < steps.length) ask(); validateAll(); };
+            modalCancelEl.onclick = (e) => { e.preventDefault(); modalEl.classList.remove('open'); };
+            modalSubmitEl.onclick = async (e) => {
+                e.preventDefault(); validateAll(); if (modalSubmitEl.disabled) return; pushMsg('已收集完毕，正在生成计划...', 'ai');
+                const n = Math.max(3, Math.min(6, parseInt(answers.milestoneCount || '4', 10) || 4));
+                const title = (answers.goal || '').trim() || '我的目标';
+                const desc = (answers.background || '').trim();
+                const deadline = (answers.deadline || '').trim();
+                const payload = { meta: { title, desc: desc || `资源：${answers.resources||''}` }, milestones: [] };
+                for (let i=0; i<n; i++) {
+                    const phase = ['准备','方案/设计','执行','验证/交付','优化','收尾'][i] || `阶段 ${i+1}`;
+                    const mTitle = `${i+1}/${n}：${phase}`;
+                    const tasks = [
+                        { text: `围绕「${title}」明确本阶段目标`, desc: '' },
+                        { text: `梳理任务与依赖关系`, desc: '' },
+                        { text: `执行关键事项`, desc: '' },
+                        { text: `产出阶段成果与记录`, desc: '' },
+                        { text: `评审并准备进入下一阶段`, desc: '' }
+                    ];
+                    payload.milestones.push({ title: mTitle, desc: `基于目标：${title}`, dueDate: deadline, tasks });
+                }
+                try { if (supportsIDB()) await writeToIDB(payload); else writeToLocalStorage(payload); }
+                catch { writeToLocalStorage(payload); }
+                location.href = 'index.html';
+            };
+            modalEl.classList.add('open'); ask();
+        }
+
+        window.addEventListener('DOMContentLoaded', async () => { await syncMoonshotConfig(); });
+        homeStartBtnEl.addEventListener('click', async () => {
+            await syncMoonshotConfig();
+            const base = (homeInputEl.value || '').trim(); if (!base) return; location.href = 'chat.html?goal=' + encodeURIComponent(base);
+        });
+    </script>
+</body>
+</html>
