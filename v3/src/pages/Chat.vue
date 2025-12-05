@@ -1,13 +1,13 @@
 <template>
-  <div class="max-w-3xl mx-auto bg-slate-800 border border-slate-700 rounded-lg p-6">
+  <div class="card">
     <div class="flex items-center justify-between mb-3">
       <div class="text-sm font-semibold">对话</div>
       <a href="/app" class="text-xs underline">返回应用</a>
     </div>
-    <div class="text-xs text-slate-400 mb-2">目标：{{ goal }}</div>
-    <div ref="chatBox" class="h-96 overflow-auto border border-slate-700 rounded bg-slate-900 p-3 mb-3 space-y-2">
+    <div class="text-xs mb-2" style="color:var(--text-sub)">目标：{{ goal }}</div>
+    <div ref="chatBox" class="chat-box mb-3 space-y-2">
       <div v-for="m in msgs" :key="m.id" :class="m.who==='ai' ? 'flex justify-start' : 'flex justify-end'">
-        <div :class="m.who==='ai' ? 'bg-slate-800 border border-slate-700 px-3 py-2 rounded w-fit max-w-[85%] whitespace-pre-wrap break-words' : 'bg-slate-700 border border-slate-600 px-3 py-2 rounded w-fit max-w-[85%] whitespace-pre-wrap break-words'">
+        <div :class="m.who==='ai' ? 'bubble bubble-ai' : 'bubble bubble-user'">
           <span>{{ m.text }}</span>
           <span v-if="m.who==='ai' && streaming && streamingAiId===m.id" class="ml-2 text-xs text-slate-400">{{ loaderDots }}</span>
         </div>
@@ -15,8 +15,8 @@
       <div ref="endAnchor"></div>
     </div>
     <div class="flex gap-2 mb-3">
-      <input v-model="input" @keydown.enter.prevent="send" class="flex-1 px-3 py-2 rounded border border-slate-700 bg-slate-900 text-slate-100" placeholder="在此输入，与大模型对话" />
-      <button class="px-3 py-2 text-sm border border-slate-700 rounded hover:border-primary" :disabled="loading" @click="send">发送</button>
+      <input v-model="input" @keydown.enter.prevent="send" class="input" style="flex:1" placeholder="在此输入，与大模型对话" />
+      <button class="btn" :disabled="loading" @click="send">发送</button>
     </div>
     
   </div>
@@ -25,6 +25,8 @@
 <script setup>
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { DB } from '../db'
+import { isJsonStart, detectValidJsonStart } from '../utils/jsonDetect'
 
 const route = useRoute()
 const router = useRouter()
@@ -88,9 +90,35 @@ async function streamChatViaFetch(messages, onDelta) {
 
 async function streamChat(messages, onDelta) { return await streamChatViaFetch(messages, onDelta) }
 
+ 
+
 async function send() {
   const t = (input.value || '').trim(); if (!t) return; loading.value = true; pushMsg(t, 'user'); input.value=''; const am = { id: Math.random().toString(36).slice(2), text:'', who:'ai' }; msgs.value.push(am); streaming.value = true; streamingAiId.value = am.id
-  try { chatCtx.value.push({ role:'user', content: t }); const toSend = chatCtx.value.slice(); await streamChat(toSend, (delta) => { am.text += delta }); chatCtx.value.push({ role:'assistant', content: am.text }) } catch (err) { am.text = '失败：' + String(err && err.message || err) } finally { loading.value = false; streaming.value = false; streamingAiId.value = '' }
+  try {
+    chatCtx.value.push({ role:'user', content: t });
+    const toSend = chatCtx.value.slice();
+    let accText = ''
+    let jsonCandidate = false
+    await streamChat(toSend, (delta) => {
+      accText += delta
+      if (accText.length === delta.length) {
+        const s = accText.trimStart()
+        if (isJsonStart(s)) jsonCandidate = true
+      }
+      if (!jsonCandidate) am.text += delta
+    })
+    const parsed = detectValidJsonStart(accText)
+    if (parsed && Array.isArray(parsed.milestones)) {
+      msgs.value = msgs.value.filter(x => x.id !== am.id)
+      await DB.init(); DB.importJSON(parsed)
+      router.push('/app')
+      chatCtx.value.push({ role:'assistant', content: '[里程碑已生成]' })
+    } else {
+      if (jsonCandidate) { try { console.error('JSON 解析失败') } catch {} ; pushMsg('检测到JSON但解析失败', 'ai') }
+      am.text = accText
+      chatCtx.value.push({ role:'assistant', content: am.text })
+    }
+  } catch (err) { am.text = '失败：' + String(err && err.message || err) } finally { loading.value = false; streaming.value = false; streamingAiId.value = '' }
 }
 
 async function checkBackend() {
@@ -161,7 +189,31 @@ async function generatePlanOffline() {
 
 async function sendGoalAuto() {
   const t = (goal.value || '').trim(); if (!t) return; loading.value = true; const am = { id: Math.random().toString(36).slice(2), text:'', who:'ai' }; msgs.value.push(am); streaming.value = true; streamingAiId.value = am.id
-  try { chatCtx.value.push({ role:'user', content: t }); const toSend = chatCtx.value.slice(); await streamChat(toSend, (delta) => { am.text += delta }); chatCtx.value.push({ role:'assistant', content: am.text }) } catch (err) { am.text = '失败：' + String(err && err.message || err) } finally { loading.value = false; streaming.value = false; streamingAiId.value = '' }
+  try {
+    chatCtx.value.push({ role:'user', content: t })
+    const toSend = chatCtx.value.slice()
+    let accText = ''
+    let jsonCandidate = false
+    await streamChat(toSend, (delta) => {
+      accText += delta
+      if (accText.length === delta.length) {
+        const s = accText.trimStart()
+        if (isJsonStart(s)) jsonCandidate = true
+      }
+      if (!jsonCandidate) am.text += delta
+    })
+    const parsed = detectValidJsonStart(accText)
+    if (parsed && Array.isArray(parsed.milestones)) {
+      msgs.value = msgs.value.filter(x => x.id !== am.id)
+      await DB.init(); DB.importJSON(parsed)
+      router.push('/app')
+      chatCtx.value.push({ role:'assistant', content: '[里程碑已生成]' })
+    } else {
+      if (jsonCandidate) { try { console.error('JSON 解析失败') } catch {} ; pushMsg('检测到JSON但解析失败', 'ai') }
+      am.text = accText
+      chatCtx.value.push({ role:'assistant', content: am.text })
+    }
+  } catch (err) { am.text = '失败：' + String(err && err.message || err) } finally { loading.value = false; streaming.value = false; streamingAiId.value = '' }
 }
 
 async function authCheck() {

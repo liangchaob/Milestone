@@ -8,6 +8,7 @@ app.use(cors())
 app.use(express.json({ limit: '1mb' }))
 
 let config = { baseUrl: 'https://api.moonshot.cn/v1', apiKey: '', model: '' }
+function trunc(s, n = 400) { const t = String(s || ''); return t.length > n ? (t.slice(0, n) + '…') : t }
 function readConfig() {
   const candidates = [
     path.join(process.cwd(), 'server', 'apikey.json'),
@@ -65,6 +66,7 @@ const SYSTEM_PROMPT = `你现在是「Milestone目标拆解助手」,专门根�
    - 用户更看重什么结果指标？（如体重、收入、作品数、成绩、习惯连续天数等）
 
 4. 总问题数量必须在 5–7 个之间，不能只有1-2个问题。
+   - 问问题时候，
    - 第 4 个问题必须包含一句鼓励用户继续完成的提示，如：
     “已到第4问，快好了”
     “问题快结束了，再坚持一下”
@@ -74,11 +76,13 @@ const SYSTEM_PROMPT = `你现在是「Milestone目标拆解助手」,专门根�
 6. 在信息不完整时【严禁】输出任何形式的建议、总结、推断、分析或 JSON。
    一旦你提前给出方案，就是违规。
 
-7. 禁止问任何复杂问题，问题需要非常简单好回答，尽量避免专业术语。
+7. 禁止问任何复杂问题，避免模糊或不具体的问题，问题需要非常简单好回答，尽量避免专业术语。
 
 8. 必须切实获取到关于用户完成该目标的相关约束与前提，不能假设用户的任何假设，匆忙结束提问。
 
 9. 如果用户中途提出问题，要及时回答并收集信息；如果用户跑题，要提醒用户并引导回到主问题，这种情况不计入问题数限制。
+
+10. 友好简洁的鼓励用户尽量详细回答，如果用户的回答有明显歧义要追问，追问问题不计入总问题数。
 
 【提问结束条件】
 当你判断信息已经足够覆盖上述关键点时，立刻进入「规划阶段」，按下面要求输出一个可执行的时间线计划：
@@ -91,7 +95,18 @@ const SYSTEM_PROMPT = `你现在是「Milestone目标拆解助手」,专门根�
        "title": string,
        "desc": string
      },
-     "milestones": Milestone[]
+     "milestones": Milestone[],
+     "userContext": {
+      "goal": string,
+      "deadline": string,
+      "currentStatus": string,
+      "timeAvailable": string,
+      "resources": string,
+      "constraints": string,
+      "preferences": string,
+      "successMetrics": string,
+      "extraNotes": string 
+    }
    }
 
 3. Milestone 结构：
@@ -109,13 +124,26 @@ const SYSTEM_PROMPT = `你现在是「Milestone目标拆解助手」,专门根�
      "done": boolean
    }
 
-5. 字段要求：
+5. userContext结构:
+  {
+    "goal": string,                // 用户的最终目标
+    "deadline": string,            // 用户期望的完成时间
+    "currentStatus": string,       // 用户当前的状态与起点
+    "timeAvailable": string,       // 用户可投入的时间
+    "resources": string,           // 用户已有资源
+    "constraints": string,         // 用户的硬限制 / 不做的事情
+    "preferences": string,         // 用户偏好与忌讳
+    "successMetrics": string,      // 用户认为的成功判断标准
+    "extraNotes": string           // 用户补充的额外信息
+  }
+
+6. 字段要求：
    - 所有字段都必须使用双引号包裹，保证是合法 JSON。
    - 字段名必须严格使用上述拼写，不要新增字段。
    - "done" 默认填 false。
    - "dueDate" 如果能大致估算时间点（如“第1–2周”“第3个月”），用中文字符串写出来；如果暂时无法估计，可以先填空字符串 ""。
 
-6. 内容要求：
+7. 内容要求：
    - 所有描述使用简体中文。
    - meta.title：用一句话概括用户目标，风格自然、可当封面项目名，不使用参数化串句，
      风格自然、像项目标题，不得出现“路线图、SOP、行动清单”等技术化字眼。
@@ -133,7 +161,7 @@ const SYSTEM_PROMPT = `你现在是「Milestone目标拆解助手」,专门根�
    - meta.desc：用 1句话描述这个计划的核心思路，或者是基于哪些前提条件制定的（时间、频率、资源、限制等）。
 
    - milestones：
-     - 数量控制在 3–7 个阶段，按时间顺序排列。
+     - 数量控制在 5–8 个阶段，按时间顺序排列。
      - 每个阶段有清晰的阶段目标（例如“打基础”“进入强化期”“冲刺与巩固”）。
      - 每个阶段的 desc 说明这一阶段的重点是什么。
      - 如果用户有明确总周期，尽量在 title 或 dueDate 中体现时间区间，例如：
@@ -148,8 +176,14 @@ const SYSTEM_PROMPT = `你现在是「Milestone目标拆解助手」,专门根�
        - 不要写“提高英语水平”，要写“每天背 20 个单词并用其中 3 个造句发朋友圈或笔记”。
      - 优先用动词开头（如：记录、完成、联系、发布、整理、练习、复盘）。
      - 如果可以，task.desc 补充执行细节、工具建议或注意事项，降低执行门槛。
+     - 不得是个原则或习惯，而是一个具体明确的的一次性任务。
 
-7. 计划要符合用户的现实约束：
+    - userContext:
+      - 字段内容必须基于用户真实回答，不得补全、虚构或推测。
+      - 如果用户未提及某项，值必须设为 ""（空字符串），不能删除字段。
+      - userContext 必须与 meta、milestones 并列为 JSON 顶层字段。
+
+8. 计划要符合用户的现实约束：
    - 时间投入要和用户可用时间匹配，避免明显不可能的安排。
    - 预算/身体/隐私等硬限制必须被尊重，不要违反用户事先说明的边界。
    - 尽量用现成免费或低成本工具（如常见 App、纸笔、手机表格等）。
@@ -171,9 +205,11 @@ app.post('/api/auth-check', async (req, res) => {
       let last = { ok:false, status:0, body:'', base:'' }
       for (const base of bases) {
         try {
+          console.log('[auth-check:req]', base + '/chat/completions', 'model=', model)
           const r = await fetch(base + '/chat/completions', { method:'POST', headers:{ 'Authorization':'Bearer ' + config.apiKey, 'Content-Type':'application/json', 'Accept':'application/json' }, body: JSON.stringify({ model, messages:[{ role:'user', content:'ping' }], stream: false, max_tokens: 8 }) })
           const txt = await r.text()
           last = { ok: r.ok, status: r.status, body: txt, base }
+          console.log('[auth-check:resp]', 'status=', r.status, 'base=', base, trunc(txt, 300))
           if (r.ok) { config.baseUrl = base; break }
           try { const j = JSON.parse(txt || '{}'); const t = j && j.error && j.error.type; if (t !== 'invalid_authentication_error') break } catch {}
         } catch (e) { last = { ok:false, status:0, body:String(e && e.message || e), base } }
@@ -194,8 +230,10 @@ app.post('/api/chat', async (req, res) => {
     let ok = false, status = 0, txt = ''
     for (const base of bases) {
       for (let attempt=0; attempt<3; attempt++) {
+        console.log('[chat:req]', base + '/chat/completions', 'model=', model, 'messages=', messages.length, 'attempt=', attempt+1)
         const r = await fetch(base + '/chat/completions', { method:'POST', headers:{ 'Authorization':'Bearer ' + config.apiKey, 'Content-Type':'application/json' }, body: JSON.stringify({ model, messages, stream: false }) })
         txt = await r.text(); status = r.status; ok = r.ok
+        console.log('[chat:resp]', 'status=', status, 'base=', base, trunc(txt, 500))
         if (r.ok) { config.baseUrl = base; attempt = 3; break }
         let type = ''
         try { const j = JSON.parse(txt || '{}'); type = j && j.error && j.error.type || '' } catch {}
@@ -226,9 +264,11 @@ app.post('/api/chat/stream', async (req, res) => {
     for (const base of bases) {
       let r, txt=''
       for (let attempt=0; attempt<3; attempt++) {
+        console.log('[stream:req]', base + '/chat/completions', 'model=', model, 'messages=', messages.length, 'attempt=', attempt+1)
         r = await fetch(base + '/chat/completions', { method:'POST', headers:{ 'Authorization':'Bearer ' + config.apiKey, 'Content-Type':'application/json', 'Accept':'text/event-stream' }, body: JSON.stringify({ model, messages, stream: true }) })
         if (r.ok) break
         txt = await r.text()
+        console.log('[stream:resp-nok]', 'status=', r.status, 'base=', base, trunc(txt, 500))
         let type = ''
         try { const j = JSON.parse(txt || '{}'); type = j && j.error && j.error.type || '' } catch {}
         if (r.status === 429 || type === 'engine_overloaded_error') { const ra = Number(r.headers.get('retry-after') || 0); const wait = ra ? ra * 1000 : 800 * (attempt + 1); await new Promise(s => setTimeout(s, wait)); continue }
@@ -257,7 +297,7 @@ app.post('/api/chat/stream', async (req, res) => {
           try {
             const j = JSON.parse(payload)
             const d = j.choices && j.choices[0] && j.choices[0].delta
-            if (d && d.content) res.write('data: ' + JSON.stringify({ content: d.content }) + '\n\n')
+            if (d && d.content) { console.log('[stream:delta]', trunc(d.content, 180)); res.write('data: ' + JSON.stringify({ content: d.content }) + '\n\n') }
           } catch {}
         }
         buf = ''
@@ -282,9 +322,11 @@ app.get('/api/chat/stream', async (req, res) => {
     for (const base of bases) {
       let r, txt=''
       for (let attempt=0; attempt<3; attempt++) {
+        console.log('[stream:get:req]', base + '/chat/completions', 'model=', model, 'attempt=', attempt+1)
         r = await fetch(base + '/chat/completions', { method:'POST', headers:{ 'Authorization':'Bearer ' + config.apiKey, 'Content-Type':'application/json', 'Accept':'text/event-stream' }, body: JSON.stringify({ model, messages, stream: true }) })
         if (r.ok) break
         txt = await r.text()
+        console.log('[stream:get:resp-nok]', 'status=', r.status, 'base=', base, trunc(txt, 500))
         let type = ''
         try { const j = JSON.parse(txt || '{}'); type = j && j.error && j.error.type || '' } catch {}
         if (r.status === 429 || type === 'engine_overloaded_error') { const ra = Number(r.headers.get('retry-after') || 0); const wait = ra ? ra * 1000 : 800 * (attempt + 1); await new Promise(s => setTimeout(s, wait)); continue }
@@ -311,7 +353,7 @@ app.get('/api/chat/stream', async (req, res) => {
           try {
             const j = JSON.parse(payload)
             const d = j.choices && j.choices[0] && j.choices[0].delta
-            if (d && d.content) res.write('data: ' + JSON.stringify({ content: d.content }) + '\n\n')
+            if (d && d.content) { console.log('[stream:get:delta]', trunc(d.content, 180)); res.write('data: ' + JSON.stringify({ content: d.content }) + '\n\n') }
           } catch {}
         }
         buf = ''
@@ -336,8 +378,10 @@ app.post('/api/generate-plan', async (req, res) => {
     let ok = false, status = 0, txt = ''
     for (const base of bases) {
       for (let attempt=0; attempt<3; attempt++) {
+        console.log('[generate:req]', base + '/chat/completions', 'model=', model, 'attempt=', attempt+1, 'prompt=', trunc(prompt, 200))
         const r = await fetch(base + '/chat/completions', { method:'POST', headers:{ 'Authorization':'Bearer ' + config.apiKey, 'Content-Type':'application/json' }, body: JSON.stringify({ model, messages:[{ role:'user', content: prompt }], stream: false }) })
         txt = await r.text(); status = r.status; ok = r.ok
+        console.log('[generate:resp]', 'status=', status, 'base=', base, trunc(txt, 500))
         if (r.ok) { config.baseUrl = base; attempt = 3; break }
         let type = ''
         try { const j = JSON.parse(txt || '{}'); type = j && j.error && j.error.type || '' } catch {}

@@ -1,0 +1,9 @@
+@mixin media($bp) {
+  @if $bp == sm { @media (min-width: 480px) { @content; } }
+  @else if $bp == md { @media (min-width: 768px) { @content; } }
+  @else if $bp == lg { @media (min-width: 1024px) { @content; } }
+}
+
+@mixin fluid-type($min, $max) {
+  font-size: clamp($min, 1vw + $min, $max);
+}
