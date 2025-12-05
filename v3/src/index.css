@@ -1,0 +1,6 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { --border:#1a1f2b; --glow: rgba(0,234,255,0.25); }
+body { font-family: JetBrains Mono, Consolas, Monaco, monospace; background:#0b0e14; color:#e6edf3; }
