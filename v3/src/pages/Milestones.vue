@@ -1,5 +1,5 @@
 <template>
-  <div class="grid grid-cols-[320px_1fr] gap-4">
+  <div class="milestones-layout">
     <div class="sidebar">
       <div class="panel-header">
         <div class="panel-title">Milestone</div>
@@ -191,8 +191,9 @@ onMounted(reload)
 </script>
 
 <style scoped>
-.detail-panel { padding: 16px; background: transparent; border: none }
-.sidebar { background: #0b0e14; border: none; border-radius: 0; padding: 16px; margin: 0; height: 100vh; position: sticky; top: 0; overflow: hidden; display: flex; flex-direction: column; }
+.milestones-layout { display: grid; grid-template-columns: minmax(260px, 28vw) 1fr; gap: 16px; width: 100%; height: calc(var(--vh, 1vh) * 100); height: 100dvh; overflow: hidden; }
+.detail-panel { padding: 16px; background: transparent; border: none; height: 100%; overflow: auto }
+.sidebar { background: #0b0e14; border: none; border-radius: 0; padding: 16px; margin: 0; height: 100%; position: sticky; top: 0; left: 0; overflow: auto; display: flex; flex-direction: column; }
 .panel-header { display:flex; align-items:center; justify-content:space-between; margin-bottom:12px }
 .panel-title { font-size: 12px; font-weight: 700; color: #ff7f50 }
 .panel-actions { display:flex; gap:8px }
@@ -225,4 +226,8 @@ onMounted(reload)
 .chk .box { width: 16px; height: 16px; border-radius: 4px; border: 1px solid #334155; background: #0f172a; display: inline-block; position: relative }
 .chk input:checked + .box { background: var(--primary); border-color: var(--primary) }
 .chk input:checked + .box::after { content: ''; position: absolute; left: 4px; top: 1px; width: 6px; height: 10px; border: 2px solid white; border-top: 0; border-left: 0; transform: rotate(45deg) }
+@media (max-width: 768px) {
+  .milestones-layout { grid-template-columns: 1fr; }
+  .sidebar { position: relative; height: auto; top: auto; }
+}
 </style>

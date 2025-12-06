@@ -1,24 +1,33 @@
 <template>
-  <div class="card">
-    <div class="flex items-center justify-between mb-3">
-      <div class="text-sm font-semibold">对话</div>
-      <a href="/app" class="text-xs underline">返回应用</a>
-    </div>
-    <div class="text-xs mb-2" style="color:var(--text-sub)">目标：{{ goal }}</div>
-    <div ref="chatBox" class="chat-box mb-3 space-y-2">
-      <div v-for="m in msgs" :key="m.id" :class="m.who==='ai' ? 'flex justify-start' : 'flex justify-end'">
-        <div :class="m.who==='ai' ? 'bubble bubble-ai' : 'bubble bubble-user'">
-          <span>{{ m.text }}</span>
-          <span v-if="m.who==='ai' && streaming && streamingAiId===m.id" class="ml-2 text-xs text-slate-400">{{ loaderDots }}</span>
-        </div>
+  <div class="chat-page">
+    <div ref="goalEl" class="chat-goal">
+      <div class="goal-left">
+        <span class="logo-mark">🔸</span>
+        <span class="logo-text">Milestone</span>
       </div>
-      <div ref="endAnchor"></div>
+      <div class="goal-right"><span class="goal-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.5"/><line x1="12" y1="12" x2="18" y2="6" stroke="currentColor" stroke-width="1.5"/><path d="M18 6 L20.5 4.5 L19 7 Z" fill="currentColor"/></svg></span><span class="goal-text">{{ goal }}</span></div>
     </div>
-    <div class="flex gap-2 mb-3">
-      <input v-model="input" @keydown.enter.prevent="send" class="input" style="flex:1" placeholder="在此输入，与大模型对话" />
-      <button class="btn" :disabled="loading" @click="send">发送</button>
+    <div ref="chatContent" class="chat-content">
+      <div class="chat-box space-y-3">
+        <div v-for="m in msgs" :key="m.id" :class="m.who==='ai' ? 'flex justify-start' : 'flex justify-end'">
+          <div :class="m.who==='ai' ? 'bubble bubble-ai' : 'bubble bubble-user'">
+            <span>{{ m.text }}</span>
+            <span v-if="m.who==='ai' && streaming && streamingAiId===m.id" class="ml-2 text-xs text-slate-400">{{ loaderDots }}</span>
+          </div>
+        </div>
+        <div ref="endAnchor"></div>
+      </div>
+      <div class="chat-shadow-top" v-show="shadowTop"></div>
+      <div class="chat-shadow-bottom" v-show="shadowBottom"></div>
+      <div class="chat-shadow-left" v-show="shadowLeft"></div>
+      <div class="chat-shadow-right" v-show="shadowRight"></div>
     </div>
-    
+    <div class="chat-input-fixed" ref="chatInputFixed">
+      <div class="chat-input-inner" ref="chatInputInner">
+        <input v-model="input" @input="onInput" @keydown.enter.prevent="send" class="input chat-input" placeholder="继续补充，让我更了解你的情况…" />
+        <button class="btn chat-send" aria-label="发送" :disabled="loading || !hasText" @click="send"><span class="send-icon">↑</span></button>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -36,11 +45,27 @@ const msgs = ref([])
 const input = ref('')
 const loading = ref(false)
 
-const chatBox = ref(null)
+const chatContent = ref(null)
 const endAnchor = ref(null)
+const chatInputInner = ref(null)
+const chatInputFixed = ref(null)
+const goalEl = ref(null)
 const streaming = ref(false)
 const streamingAiId = ref('')
 const chatCtx = ref([])
+const atTop = ref(true)
+const atBottom = ref(true)
+const userInteracting = ref(false)
+let autoResumeTimer = null
+const SCROLL_THRESHOLD = 8
+const hasText = ref(false)
+const shadowTop = ref(false)
+const shadowBottom = ref(false)
+const shadowLeft = ref(false)
+const shadowRight = ref(false)
+let shadowTimer = null
+let shadowRaf = null
+let shadowLast = 0
 const msgKey = computed(() => msgs.value.map(m => m.id + ':' + (m.text ? m.text.length : 0)).join('|'))
 watch(msgKey, async () => { await scrollBottom() })
 const loaderDots = ref('...')
@@ -58,17 +83,29 @@ watch(streaming, (val) => {
 })
 
 function maskKey(k) { const s = (k||'').trim(); if (!s) return ''; return s.slice(0,6) + '...' + s.slice(-4) }
+function shouldAutoScroll() { return !userInteracting.value || atBottom.value }
+function smoothScrollToBottom(duration = 300) {
+  try {
+    const el = chatContent.value
+    if (!el) return
+    const start = el.scrollTop
+    const end = el.scrollHeight - el.clientHeight
+    if (Math.abs(end - start) < 2) { el.scrollTop = end; return }
+    const startTime = performance.now()
+    function ease(t) { return t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t }
+    function step(now) {
+      const p = Math.min(1, (now - startTime) / duration)
+      const v = start + (end - start) * ease(p)
+      el.scrollTop = v
+      if (p < 1) requestAnimationFrame(step); else updateScrollState()
+    }
+    requestAnimationFrame(step)
+  } catch {}
+}
 async function scrollBottom() {
   await nextTick()
-  try {
-    const el = chatBox.value
-    if (el) {
-      el.scrollTo({ top: el.scrollHeight, behavior: 'auto' })
-      requestAnimationFrame(() => el.scrollTo({ top: el.scrollHeight, behavior: 'auto' }))
-    }
-    const a = endAnchor.value
-    if (a) a.scrollIntoView({ behavior: 'auto', block: 'end' })
-  } catch {}
+  if (!shouldAutoScroll()) return
+  smoothScrollToBottom(300)
 }
 function pushMsg(text, who) { const m = { id: Math.random().toString(36).slice(2), text, who }; msgs.value.push(m); scrollBottom() }
 
@@ -228,7 +265,73 @@ async function authCheck() {
 
 onMounted(async () => {
   if (goal.value) { await sendGoalAuto() }
+  try {
+    const el = chatContent.value
+    if (el) el.addEventListener('scroll', (e) => {
+      updateScrollState()
+      scheduleShadowUpdate()
+      if (autoResumeTimer) { try { clearTimeout(autoResumeTimer) } catch {} autoResumeTimer = null }
+      autoResumeTimer = setTimeout(() => { userInteracting.value = false; scrollBottom() }, 3000)
+      userInteracting.value = !atBottom.value
+    }, { passive: true })
+    updateScrollState()
+    updateEdgeShadows()
+  } catch {}
+  updateInsets()
+  window.addEventListener('resize', updateInsets)
+  if (window.visualViewport) window.visualViewport.addEventListener('resize', updateInsets)
 })
+
+function updateInsets() {
+  try {
+    const ih = ((chatInputFixed.value && chatInputFixed.value.offsetHeight) || (chatInputInner.value && chatInputInner.value.offsetHeight) || 128)
+    const gh = ((goalEl.value && goalEl.value.offsetHeight) || 56)
+    document.documentElement.style.setProperty('--chat-input-h', ih + 'px')
+    document.documentElement.style.setProperty('--chat-goal-h', gh + 'px')
+  } catch {}
+}
+
+function updateScrollState() {
+  try {
+    const el = chatContent.value
+    if (!el) return
+    atTop.value = el.scrollTop <= 0
+    atBottom.value = (el.scrollTop + el.clientHeight) >= (el.scrollHeight - SCROLL_THRESHOLD)
+  } catch {}
+}
+
+function updateEdgeShadows() {
+  try {
+    const el = chatContent.value
+    if (!el) return
+    const st = el.scrollTop
+    const sl = el.scrollLeft
+    const ch = el.clientHeight
+    const sh = el.scrollHeight
+    const cw = el.clientWidth
+    const sw = el.scrollWidth
+    shadowTop.value = st > 0
+    shadowBottom.value = (st + ch) < (sh - 1)
+    shadowLeft.value = sl > 0
+    shadowRight.value = (sl + cw) < (sw - 1)
+  } catch {}
+}
+
+function scheduleShadowUpdate() {
+  try {
+    const now = performance.now()
+    if (shadowRaf == null) {
+      shadowRaf = requestAnimationFrame(() => { shadowRaf = null; updateEdgeShadows() })
+    }
+    if (!shadowTimer && now - shadowLast < 300) {
+      shadowTimer = setTimeout(() => { shadowLast = performance.now(); shadowTimer = null; updateEdgeShadows() }, 300 - (now - shadowLast))
+    } else if (!shadowTimer) {
+      shadowLast = now
+    }
+  } catch {}
+}
+
+function onInput() { hasText.value = !!(input.value && input.value.trim()) }
 </script>
 
 <style scoped>
