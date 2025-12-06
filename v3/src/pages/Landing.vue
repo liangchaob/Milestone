@@ -2,7 +2,7 @@
   <div class="landing">
     <section class="card landing-hero">
       <div class="hero-title mb-2">说出你的目标，Milestone 帮你搞定！</div>
-      <div class="hero-sub mb-4">从一个目标，到一条清晰的SOP/路线图。你只需要照着做，Milestone 带你一直走到终点。</div>
+      <div class="hero-sub mb-4">给我一个目标，还你一条清晰的SOP/路线图。你只需要照着做，Milestone 带你一直走到终点。</div>
       <div class="mb-2" style="font-size:12px;font-weight:600">我想要...</div>
       <div style="display:flex;gap:8px">
         <input ref="inputRef" v-model="goal" @keyup.enter="start" class="input" placeholder="输入你想达成的目标" style="flex:1" />

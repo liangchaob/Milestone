@@ -55,7 +55,7 @@ describe('Milestones.vue', () => {
     const title = '阶段一'
     expect(wrapper.text()).toContain(title)
     expect(wrapper.text()).toContain('% 完成')
-    const bar = wrapper.find('.progress-fill')
+    const bar = wrapper.find('.detail-progress-fill')
     expect(bar.exists()).toBe(true)
   })
 
@@ -82,7 +82,7 @@ describe('Milestones.vue', () => {
 
   it('编辑总目标：更新标题与描述', async () => {
     const spy = vi.spyOn(window, 'prompt').mockReturnValueOnce('新总目标').mockReturnValueOnce('新的描述')
-    const setBtn = wrapper.findAll('button').find(b => b.text().includes('set'))
+    const setBtn = wrapper.find('button[title="编辑总目标"]')
     expect(setBtn).toBeTruthy()
     await setBtn.trigger('click')
     spy.mockRestore()
@@ -91,7 +91,7 @@ describe('Milestones.vue', () => {
 
   it('新增里程碑并选择', async () => {
     const spy = vi.spyOn(window, 'prompt').mockReturnValueOnce('M').mockReturnValueOnce('D')
-    const addBtn = wrapper.findAll('button').find(b => b.text().includes('新建里程碑'))
+    const addBtn = wrapper.find('button[title="新建"]')
     await addBtn.trigger('click')
     spy.mockRestore()
     const items = wrapper.findAll('.milestone-item')

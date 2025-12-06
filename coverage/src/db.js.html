@@ -1,0 +1,562 @@
+
+<!doctype html>
+<html lang="en">
+
+<head>
+    <title>Code coverage report for src/db.js</title>
+    <meta charset="utf-8" />
+    <link rel="stylesheet" href="../prettify.css" />
+    <link rel="stylesheet" href="../base.css" />
+    <link rel="shortcut icon" type="image/x-icon" href="../favicon.png" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style type='text/css'>
+        .coverage-summary .sorter {
+            background-image: url(../sort-arrow-sprite.png);
+        }
+    </style>
+</head>
+    
+<body>
+<div class='wrapper'>
+    <div class='pad1'>
+        <h1><a href="../index.html">All files</a> / <a href="index.html">src</a> db.js</h1>
+        <div class='clearfix'>
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">11.42% </span>
+                <span class="quiet">Statements</span>
+                <span class='fraction'>12/105</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">2.88% </span>
+                <span class="quiet">Branches</span>
+                <span class='fraction'>3/104</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">9.09% </span>
+                <span class="quiet">Functions</span>
+                <span class='fraction'>2/22</span>
+            </div>
+        
+            
+            <div class='fl pad1y space-right2'>
+                <span class="strong">11.11% </span>
+                <span class="quiet">Lines</span>
+                <span class='fraction'>10/90</span>
+            </div>
+        
+            
+        </div>
+        <p class="quiet">
+            Press <em>n</em> or <em>j</em> to go to the next uncovered block, <em>b</em>, <em>p</em> or <em>k</em> for the previous block.
+        </p>
+        <template id="filterTemplate">
+            <div class="quiet">
+                Filter:
+                <input type="search" id="fileSearch">
+            </div>
+        </template>
+    </div>
+    <div class='status-line low'></div>
+    <pre><table class="coverage">
+<tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
+<a name='L2'></a><a href='#L2'>2</a>
+<a name='L3'></a><a href='#L3'>3</a>
+<a name='L4'></a><a href='#L4'>4</a>
+<a name='L5'></a><a href='#L5'>5</a>
+<a name='L6'></a><a href='#L6'>6</a>
+<a name='L7'></a><a href='#L7'>7</a>
+<a name='L8'></a><a href='#L8'>8</a>
+<a name='L9'></a><a href='#L9'>9</a>
+<a name='L10'></a><a href='#L10'>10</a>
+<a name='L11'></a><a href='#L11'>11</a>
+<a name='L12'></a><a href='#L12'>12</a>
+<a name='L13'></a><a href='#L13'>13</a>
+<a name='L14'></a><a href='#L14'>14</a>
+<a name='L15'></a><a href='#L15'>15</a>
+<a name='L16'></a><a href='#L16'>16</a>
+<a name='L17'></a><a href='#L17'>17</a>
+<a name='L18'></a><a href='#L18'>18</a>
+<a name='L19'></a><a href='#L19'>19</a>
+<a name='L20'></a><a href='#L20'>20</a>
+<a name='L21'></a><a href='#L21'>21</a>
+<a name='L22'></a><a href='#L22'>22</a>
+<a name='L23'></a><a href='#L23'>23</a>
+<a name='L24'></a><a href='#L24'>24</a>
+<a name='L25'></a><a href='#L25'>25</a>
+<a name='L26'></a><a href='#L26'>26</a>
+<a name='L27'></a><a href='#L27'>27</a>
+<a name='L28'></a><a href='#L28'>28</a>
+<a name='L29'></a><a href='#L29'>29</a>
+<a name='L30'></a><a href='#L30'>30</a>
+<a name='L31'></a><a href='#L31'>31</a>
+<a name='L32'></a><a href='#L32'>32</a>
+<a name='L33'></a><a href='#L33'>33</a>
+<a name='L34'></a><a href='#L34'>34</a>
+<a name='L35'></a><a href='#L35'>35</a>
+<a name='L36'></a><a href='#L36'>36</a>
+<a name='L37'></a><a href='#L37'>37</a>
+<a name='L38'></a><a href='#L38'>38</a>
+<a name='L39'></a><a href='#L39'>39</a>
+<a name='L40'></a><a href='#L40'>40</a>
+<a name='L41'></a><a href='#L41'>41</a>
+<a name='L42'></a><a href='#L42'>42</a>
+<a name='L43'></a><a href='#L43'>43</a>
+<a name='L44'></a><a href='#L44'>44</a>
+<a name='L45'></a><a href='#L45'>45</a>
+<a name='L46'></a><a href='#L46'>46</a>
+<a name='L47'></a><a href='#L47'>47</a>
+<a name='L48'></a><a href='#L48'>48</a>
+<a name='L49'></a><a href='#L49'>49</a>
+<a name='L50'></a><a href='#L50'>50</a>
+<a name='L51'></a><a href='#L51'>51</a>
+<a name='L52'></a><a href='#L52'>52</a>
+<a name='L53'></a><a href='#L53'>53</a>
+<a name='L54'></a><a href='#L54'>54</a>
+<a name='L55'></a><a href='#L55'>55</a>
+<a name='L56'></a><a href='#L56'>56</a>
+<a name='L57'></a><a href='#L57'>57</a>
+<a name='L58'></a><a href='#L58'>58</a>
+<a name='L59'></a><a href='#L59'>59</a>
+<a name='L60'></a><a href='#L60'>60</a>
+<a name='L61'></a><a href='#L61'>61</a>
+<a name='L62'></a><a href='#L62'>62</a>
+<a name='L63'></a><a href='#L63'>63</a>
+<a name='L64'></a><a href='#L64'>64</a>
+<a name='L65'></a><a href='#L65'>65</a>
+<a name='L66'></a><a href='#L66'>66</a>
+<a name='L67'></a><a href='#L67'>67</a>
+<a name='L68'></a><a href='#L68'>68</a>
+<a name='L69'></a><a href='#L69'>69</a>
+<a name='L70'></a><a href='#L70'>70</a>
+<a name='L71'></a><a href='#L71'>71</a>
+<a name='L72'></a><a href='#L72'>72</a>
+<a name='L73'></a><a href='#L73'>73</a>
+<a name='L74'></a><a href='#L74'>74</a>
+<a name='L75'></a><a href='#L75'>75</a>
+<a name='L76'></a><a href='#L76'>76</a>
+<a name='L77'></a><a href='#L77'>77</a>
+<a name='L78'></a><a href='#L78'>78</a>
+<a name='L79'></a><a href='#L79'>79</a>
+<a name='L80'></a><a href='#L80'>80</a>
+<a name='L81'></a><a href='#L81'>81</a>
+<a name='L82'></a><a href='#L82'>82</a>
+<a name='L83'></a><a href='#L83'>83</a>
+<a name='L84'></a><a href='#L84'>84</a>
+<a name='L85'></a><a href='#L85'>85</a>
+<a name='L86'></a><a href='#L86'>86</a>
+<a name='L87'></a><a href='#L87'>87</a>
+<a name='L88'></a><a href='#L88'>88</a>
+<a name='L89'></a><a href='#L89'>89</a>
+<a name='L90'></a><a href='#L90'>90</a>
+<a name='L91'></a><a href='#L91'>91</a>
+<a name='L92'></a><a href='#L92'>92</a>
+<a name='L93'></a><a href='#L93'>93</a>
+<a name='L94'></a><a href='#L94'>94</a>
+<a name='L95'></a><a href='#L95'>95</a>
+<a name='L96'></a><a href='#L96'>96</a>
+<a name='L97'></a><a href='#L97'>97</a>
+<a name='L98'></a><a href='#L98'>98</a>
+<a name='L99'></a><a href='#L99'>99</a>
+<a name='L100'></a><a href='#L100'>100</a>
+<a name='L101'></a><a href='#L101'>101</a>
+<a name='L102'></a><a href='#L102'>102</a>
+<a name='L103'></a><a href='#L103'>103</a>
+<a name='L104'></a><a href='#L104'>104</a>
+<a name='L105'></a><a href='#L105'>105</a>
+<a name='L106'></a><a href='#L106'>106</a>
+<a name='L107'></a><a href='#L107'>107</a>
+<a name='L108'></a><a href='#L108'>108</a>
+<a name='L109'></a><a href='#L109'>109</a>
+<a name='L110'></a><a href='#L110'>110</a>
+<a name='L111'></a><a href='#L111'>111</a>
+<a name='L112'></a><a href='#L112'>112</a>
+<a name='L113'></a><a href='#L113'>113</a>
+<a name='L114'></a><a href='#L114'>114</a>
+<a name='L115'></a><a href='#L115'>115</a>
+<a name='L116'></a><a href='#L116'>116</a>
+<a name='L117'></a><a href='#L117'>117</a>
+<a name='L118'></a><a href='#L118'>118</a>
+<a name='L119'></a><a href='#L119'>119</a>
+<a name='L120'></a><a href='#L120'>120</a>
+<a name='L121'></a><a href='#L121'>121</a>
+<a name='L122'></a><a href='#L122'>122</a>
+<a name='L123'></a><a href='#L123'>123</a>
+<a name='L124'></a><a href='#L124'>124</a>
+<a name='L125'></a><a href='#L125'>125</a>
+<a name='L126'></a><a href='#L126'>126</a>
+<a name='L127'></a><a href='#L127'>127</a>
+<a name='L128'></a><a href='#L128'>128</a>
+<a name='L129'></a><a href='#L129'>129</a>
+<a name='L130'></a><a href='#L130'>130</a>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a>
+<a name='L149'></a><a href='#L149'>149</a>
+<a name='L150'></a><a href='#L150'>150</a>
+<a name='L151'></a><a href='#L151'>151</a>
+<a name='L152'></a><a href='#L152'>152</a>
+<a name='L153'></a><a href='#L153'>153</a>
+<a name='L154'></a><a href='#L154'>154</a>
+<a name='L155'></a><a href='#L155'>155</a>
+<a name='L156'></a><a href='#L156'>156</a>
+<a name='L157'></a><a href='#L157'>157</a>
+<a name='L158'></a><a href='#L158'>158</a>
+<a name='L159'></a><a href='#L159'>159</a>
+<a name='L160'></a><a href='#L160'>160</a></td><td class="line-coverage quiet"><span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import initSqlJs from 'sql.js'
+import wasmUrl from 'sql.js/dist/sql-wasm.wasm?url'
+import { nanoid } from 'nanoid'
+&nbsp;
+let SQL = null
+let db = null
+&nbsp;
+function <span class="fstat-no" title="function not covered" >encode(</span>u8) {
+  let s = <span class="cstat-no" title="statement not covered" >''</span>
+<span class="cstat-no" title="statement not covered" >  for (let i = <span class="cstat-no" title="statement not covered" >0;</span> i &lt; u8.length; i++) <span class="cstat-no" title="statement not covered" >s += String.fromCharCode(u8[i])</span></span>
+<span class="cstat-no" title="statement not covered" >  return btoa(s)</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >decode(</span>b64) {
+  const s = <span class="cstat-no" title="statement not covered" >atob(b64)</span>
+  const u8 = <span class="cstat-no" title="statement not covered" >new Uint8Array(s.length)</span>
+<span class="cstat-no" title="statement not covered" >  for (let i = <span class="cstat-no" title="statement not covered" >0;</span> i &lt; s.length; i++) <span class="cstat-no" title="statement not covered" >u8[i] = s.charCodeAt(i)</span></span>
+<span class="cstat-no" title="statement not covered" >  return u8</span>
+}
+&nbsp;
+async function init() {
+  <span class="missing-if-branch" title="else path not taken" >E</span>if (!SQL) SQL = await initSqlJs({ locateFile: () =&gt; wasmUrl })
+  const saved = <span class="cstat-no" title="statement not covered" >localStorage.getItem('milestone.sqlite')</span>
+<span class="cstat-no" title="statement not covered" >  db = saved ? new SQL.Database(decode(saved)) : new SQL.Database()</span>
+  db.exec('CREATE TABLE IF NOT EXISTS meta (key TEXT PRIMARY KEY, title TEXT, desc TEXT)')
+  db.exec('CREATE TABLE IF NOT EXISTS milestones (id TEXT PRIMARY KEY, title TEXT, desc TEXT, dueDate TEXT, createdAt INTEGER, "order" INTEGER, completedAt TEXT)')
+  db.exec('CREATE TABLE IF NOT EXISTS tasks (id TEXT PRIMARY KEY, milestoneId TEXT, text TEXT, desc TEXT, done INTEGER, createdAt INTEGER, "order" INTEGER)')
+  const r = db.exec('SELECT COUNT(1) AS c FROM meta WHERE key="global"')
+  const c = r.length &amp;&amp; <span class="branch-1 cbranch-no" title="branch not covered" >r[0].values.length </span>? r[0].values[0][0] : 0
+  <span class="missing-if-branch" title="if path not taken" >I</span>if (!c) <span class="cstat-no" title="statement not covered" >db.exec("INSERT INTO meta (key, title, desc) VALUES ('global','总目标','针对目标的描述...')")</span>
+<span class="cstat-no" title="statement not covered" >  await seedIfEmpty()</span>
+<span class="cstat-no" title="statement not covered" >  persist()</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >persist(</span>) {
+  const data = <span class="cstat-no" title="statement not covered" >db.export()</span>
+<span class="cstat-no" title="statement not covered" >  localStorage.setItem('milestone.sqlite', encode(data))</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >getMeta(</span>) {
+  const r = <span class="cstat-no" title="statement not covered" >db.exec('SELECT key, title, desc FROM meta WHERE key="global"')</span>
+<span class="cstat-no" title="statement not covered" >  if (!r.length || !r[0].values.length) <span class="cstat-no" title="statement not covered" >return { key:'global', title:'总目标', desc:'针对目标的描述...' }</span></span>
+  const v = <span class="cstat-no" title="statement not covered" >r[0].values[0]</span>
+<span class="cstat-no" title="statement not covered" >  return { key:'global', title: v[1] || '', desc: v[2] || '' }</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >setMeta(</span>title, desc) {
+<span class="cstat-no" title="statement not covered" >  db.exec("INSERT INTO meta (key, title, desc) VALUES ('global', $title, $desc) ON CONFLICT(key) DO UPDATE SET title=$title, desc=$desc", { $title: title || '', $desc: desc || '' })</span>
+<span class="cstat-no" title="statement not covered" >  persist()</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >listMilestones(</span>) {
+  const r = <span class="cstat-no" title="statement not covered" >db.exec('SELECT id, title, desc, dueDate, createdAt, "order", completedAt FROM milestones ORDER BY COALESCE("order", createdAt)')</span>
+<span class="cstat-no" title="statement not covered" >  if (!r.length) <span class="cstat-no" title="statement not covered" >return []</span></span>
+  const rows = <span class="cstat-no" title="statement not covered" >r[0].values</span>
+<span class="cstat-no" title="statement not covered" >  return rows.map(<span class="fstat-no" title="function not covered" >v </span>=&gt; (<span class="cstat-no" title="statement not covered" >{ id: v[0], title: v[1], desc: v[2], dueDate: v[3], createdAt: v[4], order: v[5], completedAt: v[6] })</span>)</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >createMilestone(</span>title, desc, dueDate = <span class="branch-0 cbranch-no" title="branch not covered" >'')</span> {
+  const id =<span class="cstat-no" title="statement not covered" > nanoid()</span>
+  const createdAt = <span class="cstat-no" title="statement not covered" >Date.now()</span>
+  const cnt = <span class="cstat-no" title="statement not covered" >db.exec('SELECT COUNT(1) FROM milestones')</span>
+  const order = <span class="cstat-no" title="statement not covered" >cnt.length ? cnt[0].values[0][0] : 0</span>
+<span class="cstat-no" title="statement not covered" >  db.exec('INSERT INTO milestones (id, title, desc, dueDate, createdAt, "order") VALUES ($id,$title,$desc,$dueDate,$createdAt,$order)', { $id:id, $title:title||'', $desc:desc||'', $dueDate:dueDate||'', $createdAt:createdAt, $order:order })</span>
+<span class="cstat-no" title="statement not covered" >  persist()</span>
+<span class="cstat-no" title="statement not covered" >  return { id, title, desc, dueDate, createdAt, order }</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >updateMilestone(</span>m) {
+<span class="cstat-no" title="statement not covered" >  db.exec('UPDATE milestones SET title=$title, desc=$desc, dueDate=$dueDate, "order"=$order, completedAt=$completedAt WHERE id=$id', { $id:m.id, $title:m.title||'', $desc:m.desc||'', $dueDate:m.dueDate||'', $order: typeof m.order === 'number' ? m.order : null, $completedAt: m.completedAt || null })</span>
+<span class="cstat-no" title="statement not covered" >  persist()</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >deleteMilestone(</span>id) {
+<span class="cstat-no" title="statement not covered" >  db.exec('DELETE FROM tasks WHERE milestoneId=$id', { $id:id })</span>
+<span class="cstat-no" title="statement not covered" >  db.exec('DELETE FROM milestones WHERE id=$id', { $id:id })</span>
+<span class="cstat-no" title="statement not covered" >  persist()</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >listTasks(</span>milestoneId) {
+  const r = <span class="cstat-no" title="statement not covered" >db.exec('SELECT id, milestoneId, text, desc, done, createdAt, "order" FROM tasks WHERE milestoneId=$mid ORDER BY COALESCE("order", createdAt)', { $mid: milestoneId })</span>
+<span class="cstat-no" title="statement not covered" >  if (!r.length) <span class="cstat-no" title="statement not covered" >return []</span></span>
+<span class="cstat-no" title="statement not covered" >  return r[0].values.map(<span class="fstat-no" title="function not covered" >v </span>=&gt; (<span class="cstat-no" title="statement not covered" >{ id: v[0], milestoneId: v[1], text: v[2], desc: v[3], done: !!v[4], createdAt: v[5], order: v[6] })</span>)</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >createTask(</span>milestoneId, text, desc) {
+  const id =<span class="cstat-no" title="statement not covered" > nanoid()</span>
+  const createdAt = <span class="cstat-no" title="statement not covered" >Date.now()</span>
+  const r = <span class="cstat-no" title="statement not covered" >db.exec('SELECT COUNT(1) FROM tasks WHERE milestoneId=$mid', { $mid: milestoneId })</span>
+  const order = <span class="cstat-no" title="statement not covered" >r.length ? r[0].values[0][0] : 0</span>
+<span class="cstat-no" title="statement not covered" >  db.exec('INSERT INTO tasks (id, milestoneId, text, desc, done, createdAt, "order") VALUES ($id,$mid,$text,$desc,$done,$createdAt,$order)', { $id:id, $mid:milestoneId, $text:text||'', $desc:desc||'', $done:0, $createdAt:createdAt, $order:order })</span>
+<span class="cstat-no" title="statement not covered" >  persist()</span>
+<span class="cstat-no" title="statement not covered" >  return { id, milestoneId, text, desc, done: 0, createdAt, order }</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >updateTask(</span>t) {
+<span class="cstat-no" title="statement not covered" >  db.exec('UPDATE tasks SET text=$text, desc=$desc, done=$done, "order"=$order WHERE id=$id', { $id:t.id, $text:t.text||'', $desc:t.desc||'', $done: t.done ? 1 : 0, $order: typeof t.order === 'number' ? t.order : null })</span>
+<span class="cstat-no" title="statement not covered" >  persist()</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >deleteTask(</span>id) {
+<span class="cstat-no" title="statement not covered" >  db.exec('DELETE FROM tasks WHERE id=$id', { $id:id })</span>
+<span class="cstat-no" title="statement not covered" >  persist()</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >importJSON(</span>data) {
+  const isNew = <span class="cstat-no" title="statement not covered" >typeof data === 'object' &amp;&amp; !Array.isArray(data) &amp;&amp; Array.isArray(data.milestones)</span>
+  const items = <span class="cstat-no" title="statement not covered" >isNew ? (data.milestones || []) : (Array.isArray(data) ? data : [])</span>
+<span class="cstat-no" title="statement not covered" >  db.exec('DELETE FROM tasks')</span>
+<span class="cstat-no" title="statement not covered" >  db.exec('DELETE FROM milestones')</span>
+<span class="cstat-no" title="statement not covered" >  if (isNew) <span class="cstat-no" title="statement not covered" >db.exec('INSERT INTO meta (key, title, desc) VALUES (\'global\', $title, $desc) ON CONFLICT(key) DO UPDATE SET title=$title, desc=$desc', { $title: (data.meta &amp;&amp; data.meta.title) || '', $desc: (data.meta &amp;&amp; data.meta.desc) || '' })</span></span>
+  let mi = <span class="cstat-no" title="statement not covered" >0</span>
+<span class="cstat-no" title="statement not covered" >  for (const m of items) {</span>
+    const mid =<span class="cstat-no" title="statement not covered" > nanoid()</span>
+<span class="cstat-no" title="statement not covered" >    db.exec('INSERT INTO milestones (id, title, desc, dueDate, createdAt, "order") VALUES ($id,$title,$desc,$dueDate,$createdAt,$order)', { $id:mid, $title:m.title||'', $desc:m.desc||'', $dueDate:m.dueDate||'', $createdAt:Date.now(), $order:mi++ })</span>
+    let ti = <span class="cstat-no" title="statement not covered" >0</span>
+<span class="cstat-no" title="statement not covered" >    for (const t of (m.tasks || [])) {</span>
+<span class="cstat-no" title="statement not covered" >      db.exec('INSERT INTO tasks (id, milestoneId, text, desc, done, createdAt, "order") VALUES ($id,$mid,$text,$desc,$done,$createdAt,$order)', { $id:nanoid(), $mid:mid, $text:t.text||'', $desc:t.desc||'', $done: t.done ? 1 : 0, $createdAt: Date.now(), $order: ti++ })</span>
+    }
+  }
+<span class="cstat-no" title="statement not covered" >  persist()</span>
+}
+&nbsp;
+function <span class="fstat-no" title="function not covered" >exportJSON(</span>) {
+  const ms = <span class="cstat-no" title="statement not covered" >listMilestones()</span>
+  const meta = <span class="cstat-no" title="statement not covered" >getMeta()</span>
+  const payload = <span class="cstat-no" title="statement not covered" >{ meta: { title: meta.title || '', desc: meta.desc || '' }, milestones: [] }</span>
+<span class="cstat-no" title="statement not covered" >  for (const m of ms) {</span>
+    const ts = <span class="cstat-no" title="statement not covered" >listTasks(m.id)</span>
+<span class="cstat-no" title="statement not covered" >    payload.milestones.push({ title: m.title, desc: m.desc, dueDate: m.dueDate || '', tasks: ts.map(<span class="fstat-no" title="function not covered" >t </span>=&gt; (<span class="cstat-no" title="statement not covered" >{ text: t.text, desc: t.desc || '', done: !!t.done })</span>) })</span>
+  }
+<span class="cstat-no" title="statement not covered" >  return payload</span>
+}
+&nbsp;
+export const DB = { init, getMeta, setMeta, listMilestones, createMilestone, updateMilestone, deleteMilestone, listTasks, createTask, updateTask, deleteTask, importJSON, exportJSON }
+&nbsp;
+function <span class="fstat-no" title="function not covered" >defaultSeed(</span>) {
+<span class="cstat-no" title="statement not covered" >  return [</span>
+    { title: '第一阶段：需求分析', desc: '梳理核心功能点，确定技术栈', tasks: [ { text:'收集用户痛点', done: 1 }, { text:'绘制界面草图', done: 1 }, { text:'确定数据库结构', done: 0 } ] },
+    { title: '第二阶段：核心开发', desc: '完成主要功能的编码工作', tasks: [ { text:'搭建开发环境', done: 0 }, { text:'编写前端页面', done: 0 }, { text:'后端API接口开发', done: 0 }, { text:'数据库连接测试', done: 0 } ] },
+    { title: '第三阶段：测试与上线', desc: '修复Bug并部署到生产环境', tasks: [ { text:'单元测试', done: 0 }, { text:'用户验收测试', done: 0 }, { text:'编写说明文档', done: 0 } ] }
+  ]
+}
+&nbsp;
+async function <span class="fstat-no" title="function not covered" >seedIfEmpty(</span>) {
+  const r = <span class="cstat-no" title="statement not covered" >db.exec('SELECT COUNT(1) FROM milestones')</span>
+  const count = <span class="cstat-no" title="statement not covered" >r.length ? r[0].values[0][0] : 0</span>
+<span class="cstat-no" title="statement not covered" >  if (count &gt; 0) <span class="cstat-no" title="statement not covered" >return</span></span>
+  let mi = <span class="cstat-no" title="statement not covered" >0</span>
+<span class="cstat-no" title="statement not covered" >  for (const m of defaultSeed()) {</span>
+    const mid =<span class="cstat-no" title="statement not covered" > nanoid()</span>
+<span class="cstat-no" title="statement not covered" >    db.exec('INSERT INTO milestones (id, title, desc, dueDate, createdAt, "order") VALUES ($id,$title,$desc,$dueDate,$createdAt,$order)', { $id:mid, $title:m.title, $desc:m.desc, $dueDate:'', $createdAt:Date.now(), $order:mi++ })</span>
+    let ti = <span class="cstat-no" title="statement not covered" >0</span>
+<span class="cstat-no" title="statement not covered" >    for (const t of m.tasks) {</span>
+<span class="cstat-no" title="statement not covered" >      db.exec('INSERT INTO tasks (id, milestoneId, text, desc, done, createdAt, "order") VALUES ($id,$mid,$text,$desc,$done,$createdAt,$order)', { $id:nanoid(), $mid:mid, $text:t.text, $desc:'', $done: t.done ? 1 : 0, $createdAt: Date.now(), $order: ti++ })</span>
+    }
+  }
+}
+&nbsp;
+&nbsp;</pre></td></tr></table></pre>
+
+                <div class='push'></div><!-- for sticky footer -->
+            </div><!-- /wrapper -->
+            <div class='footer quiet pad2 space-top1 center small'>
+                Code coverage generated by
+                <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
+                at 2025-12-06T17:28:09.567Z
+            </div>
+        <script src="../prettify.js"></script>
+        <script>
+            window.onload = function () {
+                prettyPrint();
+            };
+        </script>
+        <script src="../sorter.js"></script>
+        <script src="../block-navigation.js"></script>
+    </body>
+</html>
+    
