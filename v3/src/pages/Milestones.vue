@@ -26,15 +26,27 @@
         </div>
       </div>
       <div class="panel-progress">
-        <div class="gauge" :style="overallGaugeStyle"><div class="gauge-inner">{{ overallPercent }}%</div></div>
-        <div class="progress-label">总进度</div>
+        <div class="gauge">
+          <svg class="gauge-svg" viewBox="0 0 36 36" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <circle class="gauge-track" cx="18" cy="18" r="16" fill="none" stroke="rgba(14,165,233,0.15)" :stroke-width="gaugeStroke" />
+            <circle class="gauge-progress" cx="18" cy="18" r="16" fill="none" stroke="var(--primary)" :stroke-width="gaugeStroke" :stroke-dasharray="overallDash" transform="rotate(-90 18 18)" />
+          </svg>
+          <div class="gauge-inner">
+            <div class="gauge-text">
+              <div class="gauge-number">{{ overallPercent }}%</div>
+              <div class="gauge-sub">总进度</div>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="meta-block">
         <div class="meta-row">
           <span class="goal-icon" aria-hidden="true"><svg width="14" height="14" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.5"/><circle cx="12" cy="12" r="3.5" stroke="currentColor" stroke-width="1.5"/><line x1="12" y1="12" x2="18" y2="6" stroke="currentColor" stroke-width="1.5"/><path d="M18 6 L20.5 4.5 L19 7 Z" fill="currentColor"/></svg></span>
-          <div class="meta-title">{{ metaTitle }}</div>
+          <div class="meta-col">
+            <div class="meta-title">{{ metaTitle }}</div>
+            <div v-if="metaDesc" class="meta-desc">{{ metaDesc }}</div>
+          </div>
         </div>
-        <div v-if="metaDesc" class="meta-desc">{{ metaDesc }}</div>
       </div>
       <div class="ml-list">
         <div v-if="milestones.length === 0" class="text-xs text-slate-400">暂无里程碑，点击右上“＋”创建。</div>
@@ -129,6 +141,13 @@ const overallGaugeStyle = computed(() => {
   const p = overallPercent.value
   const deg = Math.round(p * 3.6)
   return { background: `conic-gradient(var(--primary) 0deg, var(--primary) ${deg}deg, rgba(14,165,233,0.15) ${deg}deg)` }
+})
+
+const gaugeStroke = 3.2
+const overallDash = computed(() => {
+  const C = 2 * Math.PI * 16
+  const len = Math.max(0, Math.min(C, Math.round((overallPercent.value / 100) * C)))
+  return `${len} ${C}`
 })
 
 const percentClass = computed(() => {
@@ -379,8 +398,7 @@ function startCelebrate(text = '', toastMs = 0, confettiMs) {
 .panel-actions { display:flex; gap:8px }
 .icon-btn { padding:4px 8px; font-size:11px; border:1px solid #334155; border-radius:6px; background:transparent; color:#cbd5e1; cursor:pointer }
 .icon-btn:hover { color: var(--primary); border-color: var(--primary) }
-.panel-progress { display:grid; place-items:center; gap:6px; padding:8px; border:1px solid #334155; border-radius:8px; background:#0b0e14; margin-bottom:12px }
-.progress-label { font-size:11px; color:#94a3b8 }
+.panel-progress { display:grid; place-items:center; gap:6px; padding:8px; border:none; border-radius:8px; background:transparent; margin-bottom:12px }
 .ml-list { display:flex; flex-direction:column; gap:6px }
 .ml-item { padding:8px 10px; border:1px solid #1f2937; border-radius:8px; background:#0f172a }
 .ml-item.active { border-color: var(--primary); box-shadow: 0 0 12px rgba(183,255,60,0.2); background:#0b1016 }
@@ -388,9 +406,11 @@ function startCelebrate(text = '', toastMs = 0, confettiMs) {
 .ml-col { display:flex; flex-direction:column; gap:2px; flex:1 }
 .ml-title { font-size:12px; font-weight:700; color:#cbd5e1; line-height:1.4 }
 .ml-sub { font-size:10px; color:#94a3b8; margin-top:2px }
-.meta-block { display:flex; flex-direction:column; gap:4px; padding:8px; border:1px solid #334155; border-radius:8px; background:#0b0e14; margin-bottom:12px }
-.meta-row { display:flex; align-items:center; gap:4px }
-.goal-icon { display:inline-grid; place-items:center; width:14px; height:14px; }
+.meta-block { display:flex; flex-direction:column; gap:4px; padding:8px; border:0px solid #334155; border-radius:8px; background:#000000; margin-bottom:12px }
+.meta-row { display:flex; align-items:flex-start; gap:3px }
+.meta-col { display:flex; flex-direction:column; gap:2px; flex:1 }
+.goal-icon { display:inline-grid; place-items:center; width:14px; height:14px; align-self:flex-start }
+.goal-icon { display:inline-grid; place-items:center; width:14px; height:14px; align-self:flex-start; margin-top:2px }
 .meta-title { font-size:12px; font-weight:800; color:#cbd5e1 }
 .meta-desc { font-size:10px; color:#94a3b8 }
 .detail-title { font-size:16px; font-weight:800; color:#cbd5e1 }
@@ -413,8 +433,13 @@ function startCelebrate(text = '', toastMs = 0, confettiMs) {
 .task-desc { font-size:11px; color: var(--text-sub) }
 .link-btn { padding:4px 8px; font-size:12px; border:1px solid #334155; border-radius:6px; background:transparent; color:#94a3b8; cursor:pointer }
 .link-btn:hover { color:#cbd5e1; border-color: var(--primary) }
-.gauge { position: relative; border-radius: 9999px; background: conic-gradient(var(--primary) 0deg, rgba(14,165,233,0.15) 0deg); display: grid; place-items: center; border: 1px solid #1f2937 }
-.gauge-inner { width: 70%; height: 70%; border-radius: 9999px; background: #0b0e14; display: grid; place-items: center; font-size: 10px; font-weight: 700; color: #cbd5e1; border: 1px solid #334155 }
+.gauge { position: relative; width: 72px; height: 72px; border-radius: 9999px; display: grid; place-items: center; border: none }
+.gauge-svg { position: absolute; inset: 0; width: 100%; height: 100% }
+.gauge-progress { stroke-linecap: round; transition: stroke-dasharray 200ms ease }
+.gauge-inner { width: 84%; height: 84%; border-radius: 9999px; background: #0b0e14; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; color: #cbd5e1; border: none }
+.gauge-text { display: flex; flex-direction: column; align-items: center; gap: 0}
+.gauge-number { font-size: 12px; font-weight: 800; color: #cbd5e1 }
+.gauge-sub { font-size: 10px; color: #94a3b8 }
 .chk { display: inline-flex; align-items: center; justify-content: center }
 .chk input { position: absolute; opacity: 0; pointer-events: none }
 .chk .box { width: 16px; height: 16px; border-radius: 4px; border: 1px solid #334155; background: #0f172a; display: inline-block; position: relative }

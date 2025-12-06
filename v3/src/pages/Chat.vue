@@ -25,7 +25,7 @@
     </div>
     <div class="chat-input-fixed" ref="chatInputFixed">
       <div class="chat-input-inner" ref="chatInputInner">
-        <input v-model="input" @input="onInput" @keydown.enter.prevent="send" class="input chat-input" placeholder="继续补充，让我更了解你的情况…" />
+        <input v-model="input" @input="onInput" @keydown.enter.prevent="send" class="input chat-input" placeholder="继续补充，让我更加了解你的情况…" />
         <button class="btn chat-send" aria-label="发送" :disabled="loading || !hasText" @click="send"><span class="send-icon">↑</span></button>
       </div>
     </div>
