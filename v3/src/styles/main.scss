@@ -92,7 +92,7 @@ body {
 .goal-right { display:flex; align-items:center; justify-content:flex-end; gap:4px; font-size: 12px; color: var(--text-sub); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .goal-icon { width: 14px; height: 14px; color: #cbd5e1; display:inline-flex; align-items:center; justify-content:center; flex: 0 0 auto; }
 .goal-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.chat-content { position: fixed; left: 0; right: 0; top: var(--chat-goal-h, 64px); bottom: var(--chat-input-h, 128px); overflow: auto; display: flex; flex-direction: column; width: 100%; max-width: 800px; margin: 0 auto; padding: 0 20px; line-height: 1.65; font-size: 16px; }
+.chat-content { position: fixed; left: 0; right: 0; top: var(--chat-goal-h, 64px); bottom: var(--chat-input-h, 128px); overflow: auto; display: flex; flex-direction: column; width: 100%; max-width: 800px; margin: 0 auto; padding: 0 20px; line-height: 1.65; font-size: 14px; }
 .bubble { border-radius: 16px; box-shadow: 0 8px 24px rgba(2, 6, 23, 0.35); }
 .chat-input-fixed { position: fixed; left: 0; right: 0; bottom: 12px; display: grid; place-items: center; pointer-events: none; padding-bottom: env(safe-area-inset-bottom); }
 .chat-input-inner { pointer-events: auto; width: calc(100% - 24px); max-width: 800px; display:flex; align-items:center; gap: 12px; padding: 10px 14px; border: 1px solid $border; border-radius: 9999px; background: #0b0e14; box-shadow: 0 12px 28px rgba(0, 0, 0, 0.35); }
@@ -125,10 +125,10 @@ body {
 /* Edge gradients removed for clean, flat design */
 
 @media (min-width: 1024px) {
-  .chat-content { font-size: 18px; line-height: 1.75; }
+  .chat-content { font-size: 16px; line-height: 1.7; }
 }
 @media (max-width: 768px) {
-  .chat-content { width: 100%; max-width: 100%; padding: 0 12px; font-size: 15px; line-height: 1.6; }
+  .chat-content { width: 100%; max-width: 100%; padding: 0 12px; font-size: 13px; line-height: 1.6; }
   .chat-input-inner { width: calc(100% - 12px); }
   .chat-goal { padding: 12px 12px; }
   .goal-right { font-size: 11px; }
@@ -139,3 +139,13 @@ body {
 .chat-shadow-bottom { left: 0; right: 0; bottom: 0; height: 50px; box-shadow: inset 0 10px 10px -10px rgba(12,17,27,0.85); }
 .chat-shadow-left { top: 0; bottom: 0; left: 0; width: 50px; box-shadow: inset -10px 0 10px -10px rgba(12,17,27,0.85); }
 .chat-shadow-right { top: 0; bottom: 0; right: 0; width: 50px; box-shadow: inset 10px 0 10px -10px rgba(12,17,27,0.85); }
+
+.plan-overlay { position: fixed; inset: 0; display: grid; place-items: center; background: rgba(2,6,23,0.55); backdrop-filter: blur(2px); z-index: 50; }
+.plan-card { display: flex; align-items: center; gap: 12px; padding: 16px 20px; border: 1px solid $border; border-radius: 12px; background: $surface; box-shadow: 0 12px 28px rgba(0,0,0,0.35); }
+.plan-text { font-size: 14px; color: $text-main; font-weight: 700; }
+.confetti-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 60; }
+.celebrate-toast { position: fixed; inset: 0; display: grid; place-items: center; z-index: 61; background: rgba(2,6,23,0.55); backdrop-filter: blur(2px); pointer-events: auto; }
+.celebrate-inner { padding: 14px 20px; border: none; border-radius: 0; background: linear-gradient(90deg, rgba(183,255,60,0.18), rgba(96,165,250,0.12)); color: $text-main; font-weight: 800; box-shadow: 0 12px 28px rgba(183,255,60,0.25); backdrop-filter: blur(3px) saturate(1.05); animation: toastFade 2.2s ease-in-out forwards; display: inline-flex; align-items: center; gap: 10px; }
+.celebrate-icon { color: var(--primary); display: inline-grid; place-items: center }
+.celebrate-text { letter-spacing: 0.2px }
+@keyframes toastFade { 0% { opacity: 0; transform: translateY(-8px) } 12% { opacity: 1; transform: translateY(0) } 80% { opacity: 1 } 100% { opacity: 0 } }

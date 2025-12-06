@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import { isJsonStart, detectValidJsonStart } from '../../src/utils/jsonDetect'
+import { isJsonStart, detectValidJsonStart, findMilestonesJson, repairMilestonesJson } from '../../src/utils/jsonDetect'
 
 describe('jsonDetect', () => {
   it('detects start with {', () => {
@@ -32,6 +32,42 @@ describe('jsonDetect', () => {
   it('handles milestones JSON', () => {
     const input = '  {"milestones":[]}'
     const j = detectValidJsonStart(input)
+    expect(Array.isArray(j && j.milestones)).toBe(true)
+  })
+
+  it('finds milestones object later in text', () => {
+    const input = ' {"a":1} \n  {"milestones":[{"title":"t","tasks":[]}]}'
+    const j = findMilestonesJson(input)
+    expect(Array.isArray(j && j.milestones)).toBe(true)
+  })
+
+  it('finds milestones object even if text does not start with {', () => {
+    const input = '说明：以下是计划\n\n {"milestones":[{"title":"t","tasks":[]}]} 结尾说明'
+    const j = findMilestonesJson(input)
+    expect(Array.isArray(j && j.milestones)).toBe(true)
+  })
+
+  it('extracts leading JSON and ignores trailing text', () => {
+    const input = '  {"milestones":[]} 后续说明文本'
+    const j = detectValidJsonStart(input)
+    expect(Array.isArray(j && j.milestones)).toBe(true)
+  })
+
+  it('repairs common loose JSON issues', () => {
+    const raw = '```json\n{\n meta: { title: \"T\", desc: \"D\" },\n milestones: [ { title: \"A\", tasks: [], }, ],\n // comment\n}\n```'
+    const j = repairMilestonesJson(raw)
+    expect(Array.isArray(j && j.milestones)).toBe(true)
+  })
+
+  it('repairs single quotes and booleans', () => {
+    const raw = "{ 'milestones': [ { 'title': 'X', 'tasks': [], 'done': False } ] }"
+    const j = repairMilestonesJson(raw)
+    expect(Array.isArray(j && j.milestones)).toBe(true)
+  })
+
+  it('extracts nested milestones object', () => {
+    const raw = '{"plan":{"meta":{"title":"T"},"milestones":[{"title":"A","tasks":[]}]} ,"note":"ok" }'
+    const j = repairMilestonesJson(raw)
     expect(Array.isArray(j && j.milestones)).toBe(true)
   })
 })

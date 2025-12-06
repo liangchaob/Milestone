@@ -1,11 +1,24 @@
 <template>
   <div class="milestones-layout">
+    <canvas v-show="confettiOn" ref="confettiCanvas" class="confetti-canvas"></canvas>
+    <div v-if="showCelebrate" class="celebrate-toast">
+      <div class="celebrate-inner">
+        <span class="celebrate-icon" aria-hidden="true">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="10" fill="rgba(183,255,60,0.25)"/>
+            <path d="M7 12.5 L10.2 15.7 L17 8.8" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span class="celebrate-text">恭喜！您的计划已成功生成！</span>
+      </div>
+    </div>
     <div class="sidebar">
       <div class="panel-header">
         <div class="panel-title">Milestone</div>
         <div class="panel-actions">
           <button class="icon-btn" title="新建" @click="addMilestone">＋</button>
           <button class="icon-btn" title="刷新" @click="reload">⟳</button>
+          <button class="icon-btn" title="庆祝" @click="startCelebrate">🎉</button>
         </div>
       </div>
       <div class="panel-progress">
@@ -51,7 +64,8 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, nextTick } from 'vue'
+import { useRoute } from 'vue-router'
 import { DB } from '../db'
 
 const milestones = ref([])
@@ -60,6 +74,11 @@ const tasks = ref([])
 const stats = ref({})
 const metaTitle = ref('')
 const metaDesc = ref('')
+const animEnabled = ref(true)
+const confettiOn = ref(false)
+const confettiCanvas = ref(null)
+const showCelebrate = ref(false)
+const route = useRoute()
 
 
 const currentMilestone = computed(() => milestones.value.find(x => x.id === currentId.value))
@@ -187,7 +206,61 @@ function editMeta() {
   reload()
 }
 
-onMounted(reload)
+function runConfetti(duration) {
+  try {
+    const reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    if (reduce || !animEnabled.value) return
+    const canvas = confettiCanvas.value
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    const dpr = Math.min(2, window.devicePixelRatio || 1)
+    const w = window.innerWidth
+    const h = window.innerHeight
+    canvas.width = Math.floor(w * dpr)
+    canvas.height = Math.floor(h * dpr)
+    canvas.style.width = w + 'px'
+    canvas.style.height = h + 'px'
+    confettiOn.value = true
+    const n = Math.min(90, Math.max(50, Math.floor((w*h) / (800*600))))
+    const colors = ['#b7ff3c','#60a5fa','#f472b6','#f59e0b','#34d399']
+    const parts = []
+    for (let i=0;i<n;i++) parts.push({ x: Math.random()*canvas.width, y: -Math.random()*canvas.height*0.3, vx: (Math.random()-0.5)*1.2*dpr, vy: (1+Math.random()*1.5)*dpr, s: 2 + Math.random()*3, c: colors[i%colors.length], a: 1, r: Math.random()*Math.PI })
+    const t0 = performance.now()
+    function draw(now) {
+      const dt = Math.min(32, now - (draw.last || now))
+      draw.last = now
+      ctx.clearRect(0,0,canvas.width,canvas.height)
+      for (const p of parts) {
+        p.vy += 0.002 * dt * dpr
+        p.x += p.vx * dt
+        p.y += p.vy * dt
+        p.r += 0.02 * dt
+        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.r); ctx.globalAlpha = p.a; ctx.fillStyle = p.c; ctx.fillRect(-p.s, -p.s, p.s*2, p.s*2); ctx.restore()
+      }
+      if (now - t0 < duration) requestAnimationFrame(draw)
+      else confettiOn.value = false
+    }
+    requestAnimationFrame(draw)
+  } catch {}
+}
+
+onMounted(async () => {
+  try { const pref = localStorage.getItem('animEnabled'); if (pref === '0') animEnabled.value = false } catch {}
+  if ((route.query && route.query.celebrate) === '1') {
+    showCelebrate.value = true
+    setTimeout(() => { showCelebrate.value = false }, 2000)
+  }
+  await nextTick()
+  if (showCelebrate.value) runConfetti(Math.floor(2400 + Math.random()*600))
+  await reload()
+})
+
+function startCelebrate() {
+  if (!animEnabled.value) return
+  showCelebrate.value = true
+  setTimeout(() => { showCelebrate.value = false }, 2000)
+  runConfetti(Math.floor(2400 + Math.random()*600))
+}
 </script>
 
 <style scoped>

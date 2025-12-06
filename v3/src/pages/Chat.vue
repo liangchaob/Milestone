@@ -11,7 +11,8 @@
       <div class="chat-box space-y-3">
         <div v-for="m in msgs" :key="m.id" :class="m.who==='ai' ? 'flex justify-start' : 'flex justify-end'">
           <div :class="m.who==='ai' ? 'bubble bubble-ai' : 'bubble bubble-user'">
-            <span>{{ m.text }}</span>
+            <span v-if="m.text">{{ m.text }}</span>
+            <span v-if="m.action==='redesign'"><button class="btn btn-primary" @click="redesign">重新设计</button></span>
             <span v-if="m.who==='ai' && streaming && streamingAiId===m.id" class="ml-2 text-xs text-slate-400">{{ loaderDots }}</span>
           </div>
         </div>
@@ -28,6 +29,14 @@
         <button class="btn chat-send" aria-label="发送" :disabled="loading || !hasText" @click="send"><span class="send-icon">↑</span></button>
       </div>
     </div>
+    <div v-if="confirming" class="plan-overlay">
+      <div class="plan-card">
+        <div class="gauge" :style="{ background: 'conic-gradient(var(--primary) ' + Math.floor(confirmProgress*3.6) + 'deg, rgba(14,165,233,0.15) ' + Math.floor(confirmProgress*3.6) + 'deg)' }">
+          <div class="gauge-inner">{{ Math.floor(confirmProgress) }}%</div>
+        </div>
+        <div class="plan-text">计划生成中…</div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -35,7 +44,7 @@
 import { ref, onMounted, nextTick, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { DB } from '../db'
-import { isJsonStart, detectValidJsonStart } from '../utils/jsonDetect'
+import { isJsonStart, detectValidJsonStart, findMilestonesJson, repairMilestonesJson } from '../utils/jsonDetect'
 
 const route = useRoute()
 const router = useRouter()
@@ -108,6 +117,78 @@ async function scrollBottom() {
   smoothScrollToBottom(300)
 }
 function pushMsg(text, who) { const m = { id: Math.random().toString(36).slice(2), text, who }; msgs.value.push(m); scrollBottom() }
+function pushAction(action) { const m = { id: Math.random().toString(36).slice(2), text:'', who:'ai', action }; msgs.value.push(m); scrollBottom() }
+
+const confirming = ref(false)
+const confirmProgress = ref(0)
+let confirmRaf = null
+let confirmStart = 0
+let CONFIRM_DURATION = 5600
+const anim = ref({ enabled: true })
+async function confirmAndImport(payload) {
+  confirming.value = true
+  confirmProgress.value = 0
+  confirmStart = performance.now()
+  await nextTick()
+  function easeSeg(t) {
+    if (t <= 0) return 0
+    if (t >= 1) return 1
+    if (t < 0.25) { const u = t / 0.25; return 0.25 * (u * u) }
+    if (t < 0.75) { const u = (t - 0.25) / 0.5; return 0.25 + 0.5 * u }
+    const u = (t - 0.75) / 0.25; return 0.75 + 0.25 * (1 - Math.pow(1 - u, 3))
+  }
+  function step(now) {
+    const p = Math.min(1, (now - confirmStart) / CONFIRM_DURATION)
+    const e = easeSeg(p)
+    confirmProgress.value = Math.floor(e * 100)
+    if (p < 1) { confirmRaf = requestAnimationFrame(step) }
+    else {
+      confirming.value = false
+      confirmRaf = null
+      DB.init().then(() => { const ready = ensurePlan(payload); DB.importJSON(ready); router.push('/app?celebrate=1'); chatCtx.value.push({ role:'assistant', content: '[里程碑已生成]' }) })
+    }
+  }
+  confirmRaf = requestAnimationFrame(step)
+}
+
+function ensurePlan(p) {
+  const data = typeof p === 'object' && p ? JSON.parse(JSON.stringify(p)) : { meta:{ title:'我的目标', desc:'' }, milestones: [] }
+  if (!Array.isArray(data.milestones) || data.milestones.length === 0) {
+    const title = (data.meta && data.meta.title) || '我的目标'
+    const m = { title: '阶段 1：计划初始', desc: `基于目标：${title}`, dueDate: '', tasks: [ { text:'明确阶段目标' }, { text:'梳理任务与依赖' }, { text:'执行关键事项' }, { text:'记录阶段成果' } ] }
+    data.milestones = [m]
+  }
+  for (const m of data.milestones) { if (!Array.isArray(m.tasks)) m.tasks = [] }
+  return data
+}
+
+async function streamOnce(toSend, am) {
+  let accText = ''
+  let jsonCandidate = false
+  await streamChat(toSend, (delta) => {
+    accText += delta
+    if (accText.length === delta.length) {
+      const s = accText.trimStart()
+      if (isJsonStart(s)) jsonCandidate = true
+    }
+    if (!jsonCandidate) am.text += delta
+  })
+  const parsed = findMilestonesJson(accText) || detectValidJsonStart(accText) || repairMilestonesJson(accText)
+  return { parsed, accText, jsonCandidate }
+}
+
+async function retryGeneratePlan(baseMessages, am, maxRetries = 2) {
+  const sys = { role:'system', content:'请严格仅输出规范 JSON，顶层为 {"meta":{...},"milestones":[]}，不要附加任何说明或代码块。' }
+  for (let i=0; i<maxRetries; i++) {
+    pushMsg('检测到JSON但解析失败，正在重试 ' + (i+1) + '/' + maxRetries, 'ai')
+    const { parsed } = await streamOnce(baseMessages.concat([sys]), { id: am.id, text:'', who:'ai' })
+    if (parsed && Array.isArray(parsed.milestones)) { msgs.value = msgs.value.filter(x => x.id !== am.id); await confirmAndImport(parsed); return true }
+  }
+  msgs.value = msgs.value.filter(x => x.id !== am.id)
+  pushMsg('计划生成失败', 'ai')
+  pushAction('redesign')
+  return false
+}
 
 async function backendChat(userText) {
   const body = { messages: [{ role:'system', content:'你是项目规划助手，围绕用户目标进行结构化对话。' }, { role:'user', content: userText }] }
@@ -144,16 +225,13 @@ async function send() {
       }
       if (!jsonCandidate) am.text += delta
     })
-    const parsed = detectValidJsonStart(accText)
+    const parsed = findMilestonesJson(accText) || detectValidJsonStart(accText) || repairMilestonesJson(accText)
     if (parsed && Array.isArray(parsed.milestones)) {
       msgs.value = msgs.value.filter(x => x.id !== am.id)
-      await DB.init(); DB.importJSON(parsed)
-      router.push('/app')
-      chatCtx.value.push({ role:'assistant', content: '[里程碑已生成]' })
+      await confirmAndImport(parsed)
     } else {
-      if (jsonCandidate) { try { console.error('JSON 解析失败') } catch {} ; pushMsg('检测到JSON但解析失败', 'ai') }
-      am.text = accText
-      chatCtx.value.push({ role:'assistant', content: am.text })
+      if (jsonCandidate) { await retryGeneratePlan(toSend, am, 2) }
+      else { am.text = accText; chatCtx.value.push({ role:'assistant', content: am.text }) }
     }
   } catch (err) { am.text = '失败：' + String(err && err.message || err) } finally { loading.value = false; streaming.value = false; streamingAiId.value = '' }
 }
@@ -239,16 +317,13 @@ async function sendGoalAuto() {
       }
       if (!jsonCandidate) am.text += delta
     })
-    const parsed = detectValidJsonStart(accText)
+    const parsed = findMilestonesJson(accText) || detectValidJsonStart(accText) || repairMilestonesJson(accText)
     if (parsed && Array.isArray(parsed.milestones)) {
       msgs.value = msgs.value.filter(x => x.id !== am.id)
-      await DB.init(); DB.importJSON(parsed)
-      router.push('/app')
-      chatCtx.value.push({ role:'assistant', content: '[里程碑已生成]' })
+      await confirmAndImport(parsed)
     } else {
-      if (jsonCandidate) { try { console.error('JSON 解析失败') } catch {} ; pushMsg('检测到JSON但解析失败', 'ai') }
-      am.text = accText
-      chatCtx.value.push({ role:'assistant', content: am.text })
+      if (jsonCandidate) { await retryGeneratePlan(toSend, am, 2) }
+      else { am.text = accText; chatCtx.value.push({ role:'assistant', content: am.text }) }
     }
   } catch (err) { am.text = '失败：' + String(err && err.message || err) } finally { loading.value = false; streaming.value = false; streamingAiId.value = '' }
 }
@@ -332,6 +407,11 @@ function scheduleShadowUpdate() {
 }
 
 function onInput() { hasText.value = !!(input.value && input.value.trim()) }
+try {
+  const pref = localStorage.getItem('animEnabled')
+  if (pref === '0') anim.value.enabled = false
+} catch {}
+async function redesign() { try { await generatePlan() } catch { await generatePlanOffline() } }
 </script>
 
 <style scoped>
