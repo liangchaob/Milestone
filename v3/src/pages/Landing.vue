@@ -23,18 +23,41 @@
       <div class="section-title">把模糊目标，变成能完成的步骤。</div>
       <div class="cards">
         <div class="feature-card">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M12 7 L12 12 L16 14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </div>
           <div class="feature-title">自动拆解你的目标</div>
           <div class="feature-text">输入一句话，Milestone 自动生成阶段目标、每周重点和每日行动。</div>
         </div>
         <div class="feature-card">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <rect x="4" y="4" width="16" height="16" rx="3" stroke="currentColor" stroke-width="1.6"/>
+              <path d="M7 9 H17 M7 13 H13" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </div>
           <div class="feature-title">不再自己想下一步</div>
           <div class="feature-text">系统告诉你“今天该做什么”，减少决策疲劳。</div>
         </div>
         <div class="feature-card">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path d="M4 16 L9 11 L13 13 L20 6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </div>
           <div class="feature-title">路线图可视化推进</div>
           <div class="feature-text">看到清晰的进度、阶段达成率、下一步路径，避免迷茫。</div>
         </div>
         <div class="feature-card">
+          <div class="feature-icon" aria-hidden="true">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none">
+              <path d="M12 5 A7 7 0 1 0 19 12" stroke="currentColor" stroke-width="1.6" fill="none"/>
+              <path d="M20 4 L20 9 L15 9" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+            </svg>
+          </div>
           <div class="feature-title">动态调整计划</div>
           <div class="feature-text">你的进度真实变化时，Milestone 会自动为你调节节奏。</div>
         </div>
@@ -93,63 +116,51 @@
           </ul>
         </div>
       </div>
-      <div class="section-note">所有计划都会根据你的背景自动调整。</div>
     </section>
 
-    <section class="section diff">
-      <div class="section-title">不是任务清单，而是真正的“目标实现系统”</div>
-      <div class="compare">
-        <div class="compare-row compare-head">
-          <div class="compare-cell">功能</div>
-          <div class="compare-cell">待办工具</div>
-          <div class="compare-cell">习惯类工具</div>
-          <div class="compare-cell">笔记/看板工具</div>
-          <div class="compare-cell">Milestone</div>
+    <section class="section quotes">
+      <div class="section-title">关于目标与路线</div>
+      <div class="cards quotes-grid">
+        <div class="quote-card">
+          <div class="quote-text-en">“All problems that look like ‘lack of action’ actually come from a lack of clarity and precision.”</div>
+          <div class="quote-text-cn">“所有的行动力的问题，其实都来源于精确性的不足。”</div>
+          <div class="quote-foot"><img class="quote-avatar" :src="avatarElon" alt="Elon Musk" /><div class="quote-author">伊隆·马斯克（Elon Musk，企业家）</div></div>
         </div>
-        <div class="compare-row">
-          <div class="compare-cell">自动拆解目标</div>
-          <div class="compare-cell">✗</div>
-          <div class="compare-cell">✗</div>
-          <div class="compare-cell">✗</div>
-          <div class="compare-cell">✓</div>
+
+        <div class="quote-card">
+          <div class="quote-text-en">“People don’t fail because they lack willpower. They fail because the system doesn’t support them.”</div>
+          <div class="quote-text-cn">“人们失败并不是因为缺少意志力，而是因为系统没有支持他们。”</div>
+          <div class="quote-foot"><img class="quote-avatar" :src="avatarFogg" alt="BJ Fogg" /><div class="quote-author">BJ Fogg（斯坦福行为设计实验室）</div></div>
         </div>
-        <div class="compare-row">
-          <div class="compare-cell">自动生成路线图</div>
-          <div class="compare-cell">✗</div>
-          <div class="compare-cell">✗</div>
-          <div class="compare-cell">△</div>
-          <div class="compare-cell">✓</div>
+        <div class="quote-card">
+          <div class="quote-text-en">“People act based on the path of least resistance.”</div>
+          <div class="quote-text-cn">“人们会沿着阻力最小的路径行动。”</div>
+          <div class="quote-foot"><img class="quote-avatar" :src="avatarRicardo" alt="David Ricardo" /><div class="quote-author">大卫·李嘉图（David Ricardo）</div></div>
         </div>
-        <div class="compare-row">
-          <div class="compare-cell">告诉你下一步</div>
-          <div class="compare-cell">✗</div>
-          <div class="compare-cell">✗</div>
-          <div class="compare-cell">✗</div>
-          <div class="compare-cell">✓</div>
+        <div class="quote-card">
+          <div class="quote-text-en">“You do not rise to the level of your goals. You fall to the level of your systems.”</div>
+          <div class="quote-text-cn">“你不会达到目标的高度，你会掉到你所建立系统的水平。”</div>
+          <div class="quote-foot"><img class="quote-avatar" :src="avatarJames" alt="James Clear" /><div class="quote-author">詹姆斯·克利尔（James Clear，《原子习惯》作者）</div></div>
         </div>
-        <div class="compare-row">
-          <div class="compare-cell">动态调整</div>
-          <div class="compare-cell">弱</div>
-          <div class="compare-cell">弱</div>
-          <div class="compare-cell">✗</div>
-          <div class="compare-cell">✓</div>
+        <div class="quote-card">
+          <div class="quote-text-en">“Plans are only good intentions unless they immediately degenerate into hard work.”</div>
+          <div class="quote-text-cn">“计划若不能立刻变成艰苦的行动，就只是一种良好的意愿。”</div>
+          <div class="quote-foot"><img class="quote-avatar" :src="avatarDrucker" alt="Peter Drucker" /><div class="quote-author">彼得·德鲁克（Peter Drucker）</div></div>
         </div>
-        <div class="compare-row">
-          <div class="compare-cell">面向普通用户</div>
-          <div class="compare-cell">△（计划难）</div>
-          <div class="compare-cell">✓</div>
-          <div class="compare-cell">△（复杂）</div>
-          <div class="compare-cell">✓</div>
+        <div class="quote-card">
+          <div class="quote-text-en">“The safest way to get what you want is to deserve what you want.”</div>
+          <div class="quote-text-cn">“得到你想要之物的最安全方式，就是让自己配得上它。”</div>
+          <div class="quote-foot"><img class="quote-avatar" :src="avatarMunger" alt="Charlie Munger" /><div class="quote-author">查理·芒格（Charlie Munger）</div></div>
         </div>
       </div>
-      <div class="section-sub">Milestone 帮你“从想做 → 到做到”。不是提醒你任务，而是让你完成目标。</div>
     </section>
 
     <section class="section audience">
-      <div class="section-title">Milestone 适合任何想要“真正做成一件事”的人。</div>
+      <div class="section-title">Milestone 适合任何想要“搞定一件事”的人</div>
       <div class="tag-cloud">
         <span class="tag">想要改变但不知道从哪开始</span>
         <span class="tag">学过很多方法却执行不下去</span>
+        <span class="tag">雄心万丈结果被各种问题卡住了</span>
         <span class="tag">想转行 / 学技能，但缺路径</span>
         <span class="tag">想减脂 /健身但容易半途</span>
         <span class="tag">不想每天自己想“今天干啥”</span>
@@ -161,9 +172,10 @@
 
     <section class="section final-cta">
       <div class="section-title">准备好开启你的下一段旅程了吗？</div>
-      <div class="section-sub">说出你的目标，Milestone 会帮你把它做成。</div>
+      <div class="section-sub">说出你的目标，Milestone 帮你把它搞定！</div>
       <button class="btn btn-primary btn-cta" @click="start">立即开始使用 Milestone</button>
     </section>
+    <footer class="site-footer">Copyright©Zhildata 2025-2026</footer>
   </div>
   </template>
 
@@ -174,6 +186,12 @@ import { useRouter } from 'vue-router'
 const router = useRouter()
 const goal = ref('')
 const inputRef = ref(null)
+import avatarElon from '../../../famous/Elon Musk.png'
+import avatarMunger from '../../../famous/Charlie Munger.png'
+import avatarDrucker from '../../../famous/Peter Drucker.png'
+import avatarJames from '../../../famous/James Clear.png'
+import avatarFogg from '../../../famous/BJ Fogg.png'
+import avatarRicardo from '../../../famous/David Ricardo.png'
 
 function start() {
   const base = (goal.value || '').trim()

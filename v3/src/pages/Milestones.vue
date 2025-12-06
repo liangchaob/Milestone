@@ -14,7 +14,10 @@
     </div>
     <div class="sidebar">
       <div class="panel-header">
-        <div class="panel-title">Milestone</div>
+        <div class="goal-left">
+          <span class="logo-mark">🔸</span>
+          <span class="logo-text">Milestone</span>
+        </div>
         <div class="panel-actions">
           <button class="icon-btn" title="新建" @click="addMilestone">＋</button>
           <button class="icon-btn" title="刷新" @click="reload">⟳</button>
